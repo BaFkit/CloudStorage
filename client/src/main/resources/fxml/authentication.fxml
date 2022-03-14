@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bafkit.cloud.storage.client.Controllers.AuthenticationController">
+<VBox alignment="CENTER" minHeight="300.0" minWidth="200.0" prefHeight="400.0" prefWidth="300.0" spacing="20.0" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bafkit.cloud.storage.client.controllers.AuthenticationController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
@@ -36,7 +36,7 @@
             </PasswordField>
          </children>
       </VBox>
-      <Button fx:id="button" mnemonicParsing="false" prefWidth="80.0" text="Enter" onAction="#clickEnter" textAlignment="CENTER" VBox.vgrow="ALWAYS" />
+      <Button fx:id="button" mnemonicParsing="false" onAction="#clickEnter" prefWidth="80.0" text="Enter" textAlignment="CENTER" VBox.vgrow="ALWAYS" />
    </children>
 
 </VBox>

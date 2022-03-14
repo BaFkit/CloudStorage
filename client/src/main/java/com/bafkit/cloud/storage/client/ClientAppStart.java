@@ -11,7 +11,7 @@ public class ClientAppStart extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(ClientAppStart.class.getResource("/fxml/authentication.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 300, 380);
+        Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Cloud Storage");
         stage.setScene(scene);
         stage.setResizable(false);
