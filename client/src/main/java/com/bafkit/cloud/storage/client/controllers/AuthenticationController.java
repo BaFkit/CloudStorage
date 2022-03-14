@@ -1,6 +1,6 @@
 package com.bafkit.cloud.storage.client.controllers;
 
-import com.bafkit.cloud.storage.client.ClientApp;
+import com.bafkit.cloud.storage.client.Client;
 import com.bafkit.cloud.storage.client.controllers.utilities.WindowController;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -14,10 +14,10 @@ import java.io.IOException;
 
 public class AuthenticationController implements WindowController {
 
-    private ClientApp clientApp;
+    private final Client client;
 
     public AuthenticationController() {
-        clientApp = new ClientApp();
+        client = Client.getClient();
     }
 
     @FXML
@@ -36,16 +36,23 @@ public class AuthenticationController implements WindowController {
 
 
     public void clickEnter(ActionEvent actionEvent) {
+        if(login.getText().trim().isEmpty() || password.getText().trim().isEmpty()) {
+            return;
+        }
         String command = "auth ".concat(login.getText().trim()).concat(" ").concat(password.getText().trim());
         try {
-            clientApp.sendCommand(command);
-            command = clientApp.read();
-            System.out.println(command);
+            client.sendCommand(command);
+            command = client.readCommand();
+            if (command.equals("success")) {
+                windowCloudStorage();
+            }else {
+                login.clear();
+                password.clear();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        windowCloudStorage();
     }
 
 
