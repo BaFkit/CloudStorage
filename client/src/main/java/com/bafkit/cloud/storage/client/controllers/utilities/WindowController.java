@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 public interface WindowController {
+
     default void changeWindow(Scene scene, String fxmlName) {
         try {
             Stage stage = (Stage) scene.getWindow();

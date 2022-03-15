@@ -29,6 +29,9 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     @FXML
+    Button openFileChooser;
+
+    @FXML
     public ListView<String> cloudFilesList;
 
     @FXML
@@ -70,12 +73,9 @@ public class CloudStorageController implements Initializable, WindowController {
         refreshListView(list, listFilesOnServer, cloudFilesList);
     }
 
-    public void windowCloudStorage() {
-        changeWindow(button.getScene(),"authentication");
-    }
 
     public void clickExit(ActionEvent actionEvent) {
-        windowCloudStorage();
+        changeWindow(button.getScene(), "authentication");
     }
 
     public void selectItem(MouseEvent mouseEvent) {
