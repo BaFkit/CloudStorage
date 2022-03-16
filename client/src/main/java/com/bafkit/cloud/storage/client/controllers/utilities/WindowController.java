@@ -15,10 +15,11 @@ public interface WindowController {
             Stage stage = (Stage) scene.getWindow();
             stage.close();
             String fxml = "/fxml/" + fxmlName + ".fxml";
-            Parent chat = FXMLLoader.load(Objects.requireNonNull(getClass().getResource(fxml)));
+            Parent parent = FXMLLoader.load(Objects.requireNonNull(getClass().getResource(fxml)));
             stage = new Stage();
-            stage.setTitle("fxmlName");
-            stage.setScene(new Scene(chat));
+            fxmlName = Character.toUpperCase(fxmlName.charAt(0)) + fxmlName.substring(1);
+            stage.setTitle(fxmlName);
+            stage.setScene(new Scene(parent));
             stage.setResizable(false);
             stage.show();
         } catch (IOException e) {

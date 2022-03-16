@@ -3,8 +3,9 @@ package com.bafkit.cloud.storage.client;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
-public class Client implements Closeable{
+public class Client implements Closeable {
 
     private static Client client;
     private final String SERVER = "localhost";
@@ -34,6 +35,7 @@ public class Client implements Closeable{
     public void setLogin(String login) {
         this.login = login;
     }
+
     public String getLogin() {
         return login;
     }
@@ -47,6 +49,16 @@ public class Client implements Closeable{
         byte[] buffer = new byte[256];
         int bytesRead = in.read(buffer);
         return new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+    }
+
+    public void sendFile(File uploadFile) {
+        try {
+            byte[] bytes = Files.readAllBytes(uploadFile.toPath());
+            System.out.println(bytes.length);
+            out.write(bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

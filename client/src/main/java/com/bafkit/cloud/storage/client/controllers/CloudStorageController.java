@@ -10,7 +10,9 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -28,14 +30,15 @@ public class CloudStorageController implements Initializable, WindowController {
         list = FXCollections.observableArrayList();
     }
 
-    @FXML
-    Button openFileChooser;
 
     @FXML
-    public ListView<String> cloudFilesList;
+    ListView<String> cloudFilesList;
 
     @FXML
-    Button button;
+    Button upload;
+
+    @FXML
+    Button exit;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -74,8 +77,33 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
 
+    public void clickUpload(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select file");
+        File uploadFile = fileChooser.showOpenDialog(exit.getScene().getWindow());
+        try {
+            client.sendCommand("upload " + uploadFile.getName());
+            String command = client.readCommand();
+            if (command.equals("ready")) {
+                System.out.println(uploadFile.length());
+                client.sendCommand("waitingSend " + uploadFile.length());
+                command = client.readCommand();
+                if (command.equals("waitingGet")) {
+                    client.sendFile(uploadFile);
+                }
+                command = client.readCommand();
+                System.out.println(command);
+                client.sendCommand("list");
+                listFilesOnServer = client.readCommand();
+                refreshListView(list, listFilesOnServer, cloudFilesList);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void clickExit(ActionEvent actionEvent) {
-        changeWindow(button.getScene(), "authentication");
+        changeWindow(exit.getScene(), "authentication");
     }
 
     public void selectItem(MouseEvent mouseEvent) {
