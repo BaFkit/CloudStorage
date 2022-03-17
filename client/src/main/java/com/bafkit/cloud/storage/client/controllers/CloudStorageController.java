@@ -56,7 +56,7 @@ public class CloudStorageController implements Initializable, WindowController {
         cloudFilesList.getItems().clear();
         String[] files = listFilesOnServer.trim().split(" ");
         for (int i = 0; i < files.length; i++) {
-            files[i] = files[i].replace("??", " ");
+            files[i] = files[i].replace("@", " ");
         }
         list.addAll("...");
         if (Arrays.asList(files).get(0).isEmpty()) {
@@ -82,17 +82,18 @@ public class CloudStorageController implements Initializable, WindowController {
         fileChooser.setTitle("Select file");
         File uploadFile = fileChooser.showOpenDialog(exit.getScene().getWindow());
         try {
-            client.sendCommand("upload " + uploadFile.getName());
+            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@"));
             String command = client.readCommand();
             if (command.equals("ready")) {
-                System.out.println(uploadFile.length());
                 client.sendCommand("waitingSend " + uploadFile.length());
                 command = client.readCommand();
                 if (command.equals("waitingGet")) {
-                    client.sendFile(uploadFile);
+                    client.sendFile(uploadFile.getAbsolutePath());
                 }
-                command = client.readCommand();
-                System.out.println(command);
+
+                command = client.readCommand(); //ОБРАБОТАТЬ - получение потверждение закгрузки или ошибки
+                System.out.println(command + "  загрузка файла");
+
                 client.sendCommand("list");
                 listFilesOnServer = client.readCommand();
                 refreshListView(list, listFilesOnServer, cloudFilesList);
@@ -107,7 +108,7 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void selectItem(MouseEvent mouseEvent) {
-        if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()) {
+        if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
             String item = cloudFilesList.getSelectionModel().getSelectedItem();
             try {
                 cd(item);

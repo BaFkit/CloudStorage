@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class Client implements Closeable {
 
@@ -51,10 +52,9 @@ public class Client implements Closeable {
         return new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
     }
 
-    public void sendFile(File uploadFile) {
+    public void sendFile(String path) {
         try {
-            byte[] bytes = Files.readAllBytes(uploadFile.toPath());
-            System.out.println(bytes.length);
+            byte[] bytes = Files.readAllBytes(Paths.get(path));
             out.write(bytes);
         } catch (IOException e) {
             e.printStackTrace();
