@@ -1,0 +1,163 @@
+package com.bafkit.cloud.storage.server;
+
+import com.bafkit.cloud.storage.server.services.AuthorizationService;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+
+public class ActionController {
+
+    private final String root;
+    private String rootClient;
+    private String currentDir;
+    private String pathUp;
+
+    private long spaceClient;
+    private File fileUpload;
+    private String nameFile;
+
+    private final AuthorizationService authorizationService;
+    private FileOutputStream fos;
+
+    public ActionController(AuthorizationService authorizationService, String root) {
+        this.authorizationService = authorizationService;
+        this.root = root;
+        this.rootClient = root;
+        this.currentDir = root;
+        this.pathUp = root;
+    }
+
+    public String authorization(String[] parts) {
+        spaceClient = authorizationService.checkUserVerification(parts[1], parts[2]);
+        if (spaceClient > -1) {
+            rootClient = authorizationService.getRootClient(parts[1], parts[2]);
+            if (rootClient.equals("notExist")) {
+                String folderClient = "folder_" + parts[1];
+                File folder = new File(root + File.separator + folderClient);
+                folder.mkdir();
+                rootClient = parts[1];
+            } else {
+                File folder = new File(root + File.separator + rootClient);
+                if (!folder.exists()) {
+                    folder.mkdir();
+                }
+            }
+            currentDir = currentDir.concat("/").concat(rootClient);
+            rootClient = currentDir;
+            pathUp = currentDir;
+            return "success";
+        }
+        return "unSuccess";
+    }
+
+    public String registration(String[] parts) {
+        String login = parts[1];
+        int pass = parts[2].hashCode();
+        String reg = authorizationService.registration(login, pass);
+        if (reg.equals("busy")) {
+            return "busy";
+        }
+        if (reg.equals("success")) {
+            String folderClient = "folder_" + login;
+            File folder = new File(root + File.separator + folderClient);
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+            return "success";
+        } else {
+            return "unSuccess";
+        }
+    }
+
+    public String mkdir(String[] parts) {
+        System.out.println("Принята комманда mkdir");
+        File folder = new File(rootClient + File.separator + parts[1] + File.separator + parts[2]);
+        if (!folder.exists()) {
+            folder.mkdir();
+            System.out.println("success");
+            return "success";
+        } else {
+            System.out.println("unSuccess");
+            return "unSuccess";
+        }
+    }
+
+    public String list() {
+        System.out.println("Принята комманда list");
+        File file = new File(currentDir);
+        File[] files = file.listFiles();
+        StringBuilder sb = new StringBuilder();
+        assert files != null;
+        for (File f : files) {
+            sb.append(f.getName().replace(" ", "@")).append(" ");
+        }
+        if (sb.length() < 1) sb.append("Empty");
+        return sb.toString();
+    }
+
+    public String getPathUp(String dir) {
+        if (dir.equals(rootClient)) return dir;
+        int index = -1;
+        for (int i = 0; i < dir.length(); i++) {
+            if (dir.charAt(i) == '/') {
+                index = i;
+            }
+        }
+        dir = dir.substring(0, index);
+        return dir;
+    }
+
+    public String cd(String[] parts) {
+        if (parts[1].equals("...")) {
+            currentDir = pathUp;
+            pathUp = getPathUp(currentDir);
+            return "success";
+        } else {
+            File cd = new File(currentDir + File.separator + parts[1]);
+            if (cd.exists() && cd.isDirectory()) {
+                currentDir = currentDir + "/" + parts[1];
+                pathUp = getPathUp(currentDir);
+                return "success";
+            } else {
+                return "unSuccess";
+            }
+        }
+    }
+
+    public String upload(String[] parts) {
+        fileUpload = new File(currentDir + File.separator + parts[1].replace("@", " "));
+        if (fileUpload.exists()) {
+            nameFile = "copy_".concat(parts[1]);
+        } else {
+            nameFile = parts[1];
+        }
+        return "ready";
+    }
+
+    public String checkCapacity(String size) {
+        if (spaceClient > Long.parseLong(size)) {
+            return "waitingGet";
+        }
+        return "exceeded";
+    }
+
+    public String uploadFile(byte[] bytes) {
+        nameFile = nameFile.replace("@", " ");
+        if (!Files.exists(Paths.get(currentDir + "/" + nameFile))) {
+            try {
+                Files.createFile(Paths.get(currentDir + "/" + nameFile));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }        }
+        try {
+            Files.write(Paths.get(currentDir + "/" + nameFile), bytes, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "unSuccess";
+        }
+        return "success";
+    }
+}
+

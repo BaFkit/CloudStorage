@@ -10,7 +10,9 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -28,14 +30,15 @@ public class CloudStorageController implements Initializable, WindowController {
         list = FXCollections.observableArrayList();
     }
 
-    @FXML
-    Button openFileChooser;
 
     @FXML
-    public ListView<String> cloudFilesList;
+    ListView<String> cloudFilesList;
 
     @FXML
-    Button button;
+    Button upload;
+
+    @FXML
+    Button exit;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -53,7 +56,7 @@ public class CloudStorageController implements Initializable, WindowController {
         cloudFilesList.getItems().clear();
         String[] files = listFilesOnServer.trim().split(" ");
         for (int i = 0; i < files.length; i++) {
-            files[i] = files[i].replace("??", " ");
+            files[i] = files[i].replace("@", " ");
         }
         list.addAll("...");
         if (Arrays.asList(files).get(0).isEmpty()) {
@@ -74,12 +77,38 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
 
+    public void clickUpload(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select file");
+        File uploadFile = fileChooser.showOpenDialog(exit.getScene().getWindow());
+        try {
+            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@"));
+            String command = client.readCommand();
+            if (command.equals("ready")) {
+                client.sendCommand("waitingSend " + uploadFile.length());
+                command = client.readCommand();
+                if (command.equals("waitingGet")) {
+                    client.sendFile(uploadFile.getAbsolutePath());
+                }
+
+                command = client.readCommand(); //ОБРАБОТАТЬ - получение потверждение закгрузки или ошибки
+                System.out.println(command + "  загрузка файла");
+
+                client.sendCommand("list");
+                listFilesOnServer = client.readCommand();
+                refreshListView(list, listFilesOnServer, cloudFilesList);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void clickExit(ActionEvent actionEvent) {
-        changeWindow(button.getScene(), "authentication");
+        changeWindow(exit.getScene(), "authentication");
     }
 
     public void selectItem(MouseEvent mouseEvent) {
-        if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()) {
+        if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
             String item = cloudFilesList.getSelectionModel().getSelectedItem();
             try {
                 cd(item);
