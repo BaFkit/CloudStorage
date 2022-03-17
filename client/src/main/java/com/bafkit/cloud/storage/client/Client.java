@@ -32,6 +32,9 @@ public class Client implements Closeable {
         }
         return client;
     }
+    public static void resetClient() {
+        client = null;
+    }
 
     public void setLogin(String login) {
         this.login = login;

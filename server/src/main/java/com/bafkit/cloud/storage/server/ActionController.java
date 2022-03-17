@@ -16,6 +16,7 @@ public class ActionController {
 
     private long spaceClient;
     private File fileUpload;
+    private File fileDownload;
     private String nameFile;
 
     private final AuthorizationService authorizationService;
@@ -97,6 +98,10 @@ public class ActionController {
         return sb.toString();
     }
 
+    public String getCurrentDir() {
+        return currentDir;
+    }
+
     public String getPathUp(String dir) {
         if (dir.equals(rootClient)) return dir;
         int index = -1;
@@ -158,6 +163,25 @@ public class ActionController {
             return "unSuccess";
         }
         return "success";
+    }
+
+    public String download(String[] parts) {
+        fileDownload = new File(currentDir + File.separator + parts[1].replace("@", " "));
+        if (fileDownload.exists() && !fileDownload.isDirectory()) {
+            return "success " + fileDownload.length();
+        } else {
+            return "unSuccess";
+        }
+    }
+
+    public byte[] getBytes() {
+        byte[] bytes = new byte[512];
+        try {
+            bytes = Files.readAllBytes(fileDownload.toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bytes;
     }
 }
 

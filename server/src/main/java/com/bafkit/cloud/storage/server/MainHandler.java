@@ -21,6 +21,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
     private final ActionController actionController;
     private boolean uploadFlag = false;
+    private boolean downloadFlag = false;
     private String msgSend;
 
     private long uploadFileSize;
@@ -63,6 +64,9 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                     case ("list"):
                         msgSend = actionController.list();
                         break;
+                    case ("currentDir"):
+                        msgSend = actionController.getCurrentDir();
+                        break;
                     case ("cd"):
                         msgSend = actionController.cd(parts);
                         break;
@@ -77,11 +81,27 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                         uploadFileSize = Long.parseLong(parts[1]);
                         msgSend = actionController.checkCapacity(parts[1]);
                         break;
+                    case ("download"):
+                        msgSend = actionController.download(parts);
+                        break;
+                    case ("waitingGet"):
+                        downloadFlag = true;
+                        break;
                     default:
                         msgSend = "unknown";
                         System.out.println("unknown command");
                         break;
                 }
+
+                if (downloadFlag) {
+                    byte[] bytesDownload = actionController.getBytes();
+                    byteBuf = Unpooled.copiedBuffer(bytesDownload);
+                    downloadFlag = false;
+                    ctx.writeAndFlush(byteBuf);
+                    byteBuf.clear();
+                    return;
+                }
+
                 msg = Unpooled.copiedBuffer(msgSend.getBytes(StandardCharsets.UTF_8));
                 ctx.writeAndFlush(msg);
                 byteBuf.clear();

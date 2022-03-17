@@ -9,6 +9,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 
@@ -23,6 +24,7 @@ public class CloudStorageController implements Initializable, WindowController {
 
     private final Client client;
     private final ObservableList<String> list;
+
     private String listFilesOnServer;
 
     public CloudStorageController() {
@@ -30,15 +32,26 @@ public class CloudStorageController implements Initializable, WindowController {
         list = FXCollections.observableArrayList();
     }
 
-
+    @FXML
+    TextField pathField;
     @FXML
     ListView<String> cloudFilesList;
-
+    @FXML
+    Button download;
     @FXML
     Button upload;
-
+    @FXML
+    Button copy;
+    @FXML
+    Button cut;
+    @FXML
+    Button paste;
     @FXML
     Button exit;
+
+
+
+
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -65,6 +78,16 @@ public class CloudStorageController implements Initializable, WindowController {
             list.addAll(files);
         }
         cloudFilesList.getItems().addAll(list);
+        refreshPathField();
+    }
+
+    public void refreshPathField() {
+        try {
+            client.sendCommand("currentDir");
+            pathField.setText(client.readCommand());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void cd(String dir) throws IOException {
@@ -76,6 +99,17 @@ public class CloudStorageController implements Initializable, WindowController {
         refreshListView(list, listFilesOnServer, cloudFilesList);
     }
 
+
+    public void selectItem(MouseEvent mouseEvent) {
+        if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
+            String item = cloudFilesList.getSelectionModel().getSelectedItem();
+            try {
+                cd(item);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     public void clickUpload(ActionEvent actionEvent) {
         FileChooser fileChooser = new FileChooser();
@@ -103,18 +137,25 @@ public class CloudStorageController implements Initializable, WindowController {
         }
     }
 
-    public void clickExit(ActionEvent actionEvent) {
-        changeWindow(exit.getScene(), "authentication");
+    public void clickDownload(ActionEvent actionEvent) {
     }
 
-    public void selectItem(MouseEvent mouseEvent) {
-        if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
-            String item = cloudFilesList.getSelectionModel().getSelectedItem();
-            try {
-                cd(item);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    public void clickCopy(ActionEvent actionEvent) {
+    }
+
+    public void clickCut(ActionEvent actionEvent) {
+    }
+
+    public void clickPaste(ActionEvent actionEvent) {
+    }
+
+    public void clickExit(ActionEvent actionEvent) {
+        try {
+            client.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        Client.resetClient();
+        changeWindow(exit.getScene(), "authentication");
     }
 }
