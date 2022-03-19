@@ -50,9 +50,6 @@ public class CloudStorageController implements Initializable, WindowController {
     Button exit;
 
 
-
-
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         try {
@@ -125,7 +122,7 @@ public class CloudStorageController implements Initializable, WindowController {
                     client.sendFile(uploadFile.getAbsolutePath());
                 }
 
-                command = client.readCommand(); //ОБРАБОТАТЬ - получение потверждение закгрузки или ошибки
+                command = client.readCommand();                   //***
                 System.out.println(command + "  загрузка файла");
 
                 client.sendCommand("list");
@@ -138,6 +135,28 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void clickDownload(ActionEvent actionEvent) {
+        if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
+                && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Select file");
+            String nameFile = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+            File directory = fileChooser.showSaveDialog(exit.getScene().getWindow());
+            System.out.println(directory);
+            try {
+                client.sendCommand("download " + nameFile);
+                String command = client.readCommand();
+                if (command.split(" ")[0].equals("success")) {
+                    long sizeFile = Long.parseLong(command.split(" ")[1]);
+                    client.sendCommand("waitingGet");
+                    boolean msg = client.getFile(directory.getPath(), nameFile, sizeFile);
+                    System.out.println("Загрузка файла на компьютер - " + msg);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+        }
     }
 
     public void clickCopy(ActionEvent actionEvent) {
