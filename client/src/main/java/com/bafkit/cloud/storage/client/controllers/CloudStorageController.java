@@ -25,6 +25,7 @@ public class CloudStorageController implements Initializable, WindowController {
     private final Client client;
     private final ObservableList<String> list;
 
+
     private String listFilesOnServer;
 
     public CloudStorageController() {
@@ -36,6 +37,10 @@ public class CloudStorageController implements Initializable, WindowController {
     TextField pathField;
     @FXML
     ListView<String> cloudFilesList;
+    @FXML
+    TextField nameFolderField;
+    @FXML
+    Button newFolder;
     @FXML
     Button download;
     @FXML
@@ -99,7 +104,7 @@ public class CloudStorageController implements Initializable, WindowController {
 
     public void selectItem(MouseEvent mouseEvent) {
         if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
-            String item = cloudFilesList.getSelectionModel().getSelectedItem();
+            String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
             try {
                 cd(item);
             } catch (IOException e) {
@@ -159,6 +164,9 @@ public class CloudStorageController implements Initializable, WindowController {
         }
     }
 
+
+
+
     public void clickCopy(ActionEvent actionEvent) {
     }
 
@@ -168,6 +176,10 @@ public class CloudStorageController implements Initializable, WindowController {
     public void clickPaste(ActionEvent actionEvent) {
     }
 
+
+
+
+
     public void clickExit(ActionEvent actionEvent) {
         try {
             client.close();
@@ -176,5 +188,24 @@ public class CloudStorageController implements Initializable, WindowController {
         }
         Client.resetClient();
         changeWindow(exit.getScene(), "authentication");
+    }
+
+    public void clickNewFolder(ActionEvent actionEvent) {
+        if (!nameFolderField.getText().isEmpty()) {
+            String nameNewFolder = nameFolderField.getText().replace(" ", "@");
+            try {
+                client.sendCommand("mkdir " + nameNewFolder);
+                String command = client.readCommand();
+                if (command.equals("success")){
+                    client.sendCommand("list");
+                    listFilesOnServer = client.readCommand();
+                    refreshListView(list, listFilesOnServer, cloudFilesList);
+                } else {
+                    System.out.println("error");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

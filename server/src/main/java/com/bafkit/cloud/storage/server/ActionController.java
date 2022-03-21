@@ -74,13 +74,11 @@ public class ActionController {
 
     public String mkdir(String[] parts) {
         System.out.println("Принята комманда mkdir");
-        File folder = new File(rootClient + File.separator + parts[1] + File.separator + parts[2]);
+        File folder = new File(currentDir + File.separator + parts[1].replace("@", " "));
         if (!folder.exists()) {
             folder.mkdir();
-            System.out.println("success");
             return "success";
         } else {
-            System.out.println("unSuccess");
             return "unSuccess";
         }
     }
@@ -120,9 +118,9 @@ public class ActionController {
             pathUp = getPathUp(currentDir);
             return "success";
         } else {
-            File cd = new File(currentDir + File.separator + parts[1]);
+            File cd = new File(currentDir + File.separator + parts[1].replace("@", " "));
             if (cd.exists() && cd.isDirectory()) {
-                currentDir = currentDir + "/" + parts[1];
+                currentDir = currentDir + "/" + parts[1].replace("@", " ");
                 pathUp = getPathUp(currentDir);
                 return "success";
             } else {
