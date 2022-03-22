@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<VBox alignment="CENTER" minHeight="150.0" minWidth="300.0" prefHeight="512.0" prefWidth="1024.0" spacing="20.0" xmlns="http://javafx.com/javafx/1.8" xmlns:fx="http://javafx.com/fxml" fx:controller="com.bafkit.cloud.storage.client.controllers.CloudStorageController">
+<VBox alignment="CENTER" minHeight="150.0" minWidth="300.0" prefHeight="512.0" prefWidth="1024.0" spacing="20.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bafkit.cloud.storage.client.controllers.CloudStorageController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
@@ -14,9 +14,13 @@
             <children>
                 <Label alignment="CENTER" contentDisplay="CENTER" prefHeight="17.0" prefWidth="101.0" text="Cload Storage" textAlignment="CENTER" HBox.hgrow="ALWAYS">
                     <font>
-                        <Font size="14.0" />
+                        <Font name="System Bold" size="14.0" />
                     </font>
+               <HBox.margin>
+                  <Insets right="5.0" />
+               </HBox.margin>
                 </Label>
+            <TextField fx:id="pathField" editable="false" HBox.hgrow="ALWAYS" />
             </children>
         </HBox>
       <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
@@ -24,6 +28,10 @@
             <ListView fx:id="cloudFilesList" onMouseClicked="#selectItem" prefHeight="379.0" prefWidth="523.0" HBox.hgrow="ALWAYS" />
               <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
                <children>
+                  <Button fx:id="download" mnemonicParsing="false" onAction="#clickDownload" prefWidth="80.0" text="Download">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin></Button>
                   <Button fx:id="upload" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#clickUpload" prefWidth="80.0" text="Upload" textAlignment="CENTER">
                      <VBox.margin>
                         <Insets bottom="10.0" />
@@ -33,6 +41,39 @@
                </children>
               </VBox>
          </children>
+      </HBox>
+      <HBox>
+         <children>
+            <TextField fx:id="nameFolderField" promptText="name folder" />
+            <Button fx:id="newFolder" mnemonicParsing="false" onAction="#clickNewFolder" text="New folder">
+               <HBox.margin>
+                  <Insets left="5.0" right="30.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="copy" mnemonicParsing="false" onAction="#clickCopy" prefWidth="80.0" text="Copy">
+               <HBox.margin>
+                  <Insets right="5.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="cut" mnemonicParsing="false" onAction="#clickCut" prefWidth="80.0" text="Cut">
+               <HBox.margin>
+                  <Insets right="5.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="paste" mnemonicParsing="false" onAction="#clickPaste" prefWidth="80.0" text="Paste">
+               <HBox.margin>
+                  <Insets right="5.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="delete" mnemonicParsing="false" onAction="#clickDelete" prefWidth="80.0" text="Delete" textAlignment="CENTER">
+               <HBox.margin>
+                  <Insets left="30.0" />
+               </HBox.margin>
+            </Button>
+         </children>
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
       </HBox>
     </children>
 

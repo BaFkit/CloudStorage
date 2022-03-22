@@ -1,9 +1,12 @@
 package com.bafkit.cloud.storage.server;
 
 import com.bafkit.cloud.storage.server.services.AuthorizationService;
+import com.bafkit.cloud.storage.server.services.CopyService;
+import com.bafkit.cloud.storage.server.services.DeleteService;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
@@ -16,7 +19,11 @@ public class ActionController {
 
     private long spaceClient;
     private File fileUpload;
-    private String nameFile;
+    private File fileDownload;
+    private String nameUploadFile;
+    private String nameCopyFile;
+    private Path copyPathFile;
+    private boolean flagCut = false;
 
     private final AuthorizationService authorizationService;
     private FileOutputStream fos;
@@ -73,13 +80,11 @@ public class ActionController {
 
     public String mkdir(String[] parts) {
         System.out.println("Принята комманда mkdir");
-        File folder = new File(rootClient + File.separator + parts[1] + File.separator + parts[2]);
+        File folder = new File(currentDir + File.separator + parts[1].replace("@", " "));
         if (!folder.exists()) {
             folder.mkdir();
-            System.out.println("success");
             return "success";
         } else {
-            System.out.println("unSuccess");
             return "unSuccess";
         }
     }
@@ -95,6 +100,10 @@ public class ActionController {
         }
         if (sb.length() < 1) sb.append("Empty");
         return sb.toString();
+    }
+
+    public String getCurrentDir() {
+        return currentDir;
     }
 
     public String getPathUp(String dir) {
@@ -115,9 +124,9 @@ public class ActionController {
             pathUp = getPathUp(currentDir);
             return "success";
         } else {
-            File cd = new File(currentDir + File.separator + parts[1]);
+            File cd = new File(currentDir + File.separator + parts[1].replace("@", " "));
             if (cd.exists() && cd.isDirectory()) {
-                currentDir = currentDir + "/" + parts[1];
+                currentDir = currentDir + "/" + parts[1].replace("@", " ");
                 pathUp = getPathUp(currentDir);
                 return "success";
             } else {
@@ -129,9 +138,9 @@ public class ActionController {
     public String upload(String[] parts) {
         fileUpload = new File(currentDir + File.separator + parts[1].replace("@", " "));
         if (fileUpload.exists()) {
-            nameFile = "copy_".concat(parts[1]);
+            nameUploadFile = "copy_".concat(parts[1]);
         } else {
-            nameFile = parts[1];
+            nameUploadFile = parts[1];
         }
         return "ready";
     }
@@ -144,20 +153,79 @@ public class ActionController {
     }
 
     public String uploadFile(byte[] bytes) {
-        nameFile = nameFile.replace("@", " ");
-        if (!Files.exists(Paths.get(currentDir + "/" + nameFile))) {
+        nameUploadFile = nameUploadFile.replace("@", " ");
+        if (!Files.exists(Paths.get(currentDir + "/" + nameUploadFile))) {
             try {
-                Files.createFile(Paths.get(currentDir + "/" + nameFile));
+                Files.createFile(Paths.get(currentDir + "/" + nameUploadFile));
             } catch (IOException e) {
                 e.printStackTrace();
             }        }
         try {
-            Files.write(Paths.get(currentDir + "/" + nameFile), bytes, StandardOpenOption.APPEND);
+            Files.write(Paths.get(currentDir + "/" + nameUploadFile), bytes, StandardOpenOption.APPEND);
         } catch (IOException e) {
             e.printStackTrace();
             return "unSuccess";
         }
         return "success";
+    }
+
+    public String download(String[] parts) {
+        fileDownload = new File(currentDir + File.separator + parts[1].replace("@", " "));
+        if (fileDownload.exists() && !fileDownload.isDirectory()) {
+            return "success " + fileDownload.length();
+        } else {
+            return "unSuccess";
+        }
+    }
+
+    public byte[] getBytes() {
+        byte[] bytes = new byte[512];
+        try {
+            bytes = Files.readAllBytes(fileDownload.toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bytes;
+    }
+
+    public String copy(String part) {
+        copyPathFile = Paths.get(currentDir + "/" + part.replace("@", " "));
+        nameCopyFile = part;
+        return "success";
+    }
+
+    public String cut(String part) {
+        String command = copy(part);
+        if (command.equals("success")){
+            flagCut = true;
+        }
+        return command;
+    }
+
+    public String paste() {
+        Path destination = Paths.get(currentDir + "/" + nameCopyFile);
+        try {
+            Files.walkFileTree(copyPathFile, new CopyService(copyPathFile, destination));
+            if (flagCut) {
+                Files.walkFileTree(copyPathFile, new DeleteService());
+                flagCut = false;
+            }
+            return "success";
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "unSuccess";
+        }
+    }
+
+    public String delete(String part) {
+        Path deleteFile = Paths.get(currentDir + "/" + part.replace("@", " "));
+        try {
+            Files.walkFileTree(deleteFile, new DeleteService());
+            return "success";
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "unSuccess";
+        }
     }
 }
 

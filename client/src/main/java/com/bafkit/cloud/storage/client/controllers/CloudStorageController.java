@@ -9,6 +9,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 
@@ -23,6 +24,8 @@ public class CloudStorageController implements Initializable, WindowController {
 
     private final Client client;
     private final ObservableList<String> list;
+
+
     private String listFilesOnServer;
 
     public CloudStorageController() {
@@ -30,15 +33,29 @@ public class CloudStorageController implements Initializable, WindowController {
         list = FXCollections.observableArrayList();
     }
 
-
+    @FXML
+    TextField pathField;
     @FXML
     ListView<String> cloudFilesList;
-
+    @FXML
+    TextField nameFolderField;
+    @FXML
+    Button newFolder;
+    @FXML
+    Button download;
     @FXML
     Button upload;
-
+    @FXML
+    Button copy;
+    @FXML
+    Button cut;
+    @FXML
+    Button paste;
+    @FXML
+    Button delete;
     @FXML
     Button exit;
+
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -65,6 +82,16 @@ public class CloudStorageController implements Initializable, WindowController {
             list.addAll(files);
         }
         cloudFilesList.getItems().addAll(list);
+        refreshPathField();
+    }
+
+    public void refreshPathField() {
+        try {
+            client.sendCommand("currentDir");
+            pathField.setText(client.readCommand());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void cd(String dir) throws IOException {
@@ -76,6 +103,16 @@ public class CloudStorageController implements Initializable, WindowController {
         refreshListView(list, listFilesOnServer, cloudFilesList);
     }
 
+    public void selectItem(MouseEvent mouseEvent) {
+        if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
+            String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+            try {
+                cd(item);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     public void clickUpload(ActionEvent actionEvent) {
         FileChooser fileChooser = new FileChooser();
@@ -91,7 +128,7 @@ public class CloudStorageController implements Initializable, WindowController {
                     client.sendFile(uploadFile.getAbsolutePath());
                 }
 
-                command = client.readCommand(); //ОБРАБОТАТЬ - получение потверждение закгрузки или ошибки
+                command = client.readCommand();                   //***
                 System.out.println(command + "  загрузка файла");
 
                 client.sendCommand("list");
@@ -103,15 +140,123 @@ public class CloudStorageController implements Initializable, WindowController {
         }
     }
 
+    public void clickDownload(ActionEvent actionEvent) {
+        if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
+                && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Select file");
+            String nameFile = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+            File directory = fileChooser.showSaveDialog(exit.getScene().getWindow());
+            System.out.println(directory);
+            try {
+                client.sendCommand("download " + nameFile);
+                String command = client.readCommand();
+                if (command.split(" ")[0].equals("success")) {
+                    long sizeFile = Long.parseLong(command.split(" ")[1]);
+                    client.sendCommand("waitingGet");
+                    boolean msg = client.getFile(directory.getPath(), nameFile, sizeFile);
+                    System.out.println("Загрузка файла на компьютер - " + msg);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void clickCopy(ActionEvent actionEvent) {
+        try {
+            if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
+                    && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
+                String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+                client.sendCommand("copy " + item);
+                String command = client.readCommand();
+                if (command.equals("success")) {
+                    System.out.println(item + " ожидает копирования"); //устновить флаг
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void clickCut(ActionEvent actionEvent) {
+        try {
+            if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
+                    && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
+                String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+                client.sendCommand("cut " + item);
+                String command = client.readCommand();
+                if (command.equals("success")) {
+                    System.out.println(item + " ожидает переноса"); //устновить флаг
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void clickPaste(ActionEvent actionEvent) {
+                                                        // сделать проверку на флаг
+        try {
+            client.sendCommand("paste");
+            String command = client.readCommand();
+            if (command.equals("success")) {
+                client.sendCommand("list");
+                listFilesOnServer = client.readCommand();
+                refreshListView(list, listFilesOnServer, cloudFilesList);
+            } else {
+                System.out.println("error");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void clickDelete(ActionEvent actionEvent) {
+        try {
+            if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
+                    && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
+                String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+                client.sendCommand("delete " + item);
+                String command = client.readCommand();
+                if (command.equals("success")) {
+                    client.sendCommand("list");
+                    listFilesOnServer = client.readCommand();
+                    refreshListView(list, listFilesOnServer, cloudFilesList);
+                } else {
+                    System.out.println("error");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void clickExit(ActionEvent actionEvent) {
+        try {
+            client.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Client.resetClient();
         changeWindow(exit.getScene(), "authentication");
     }
 
-    public void selectItem(MouseEvent mouseEvent) {
-        if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
-            String item = cloudFilesList.getSelectionModel().getSelectedItem();
+    public void clickNewFolder(ActionEvent actionEvent) {
+        if (!nameFolderField.getText().isEmpty()) {
+            String nameNewFolder = nameFolderField.getText().replace(" ", "@");
             try {
-                cd(item);
+                client.sendCommand("mkdir " + nameNewFolder);
+                String command = client.readCommand();
+                if (command.equals("success")) {
+                    client.sendCommand("list");
+                    nameFolderField.clear();
+                    listFilesOnServer = client.readCommand();
+                    refreshListView(list, listFilesOnServer, cloudFilesList);
+                } else {
+                    System.out.println("error");
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }

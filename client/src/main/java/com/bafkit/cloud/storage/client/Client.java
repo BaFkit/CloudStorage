@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 public class Client implements Closeable {
 
@@ -31,6 +32,9 @@ public class Client implements Closeable {
             client = new Client();
         }
         return client;
+    }
+    public static void resetClient() {
+        client = null;
     }
 
     public void setLogin(String login) {
@@ -59,6 +63,30 @@ public class Client implements Closeable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean getFile(String path, String nameFile, long sizeFile){
+        if (Files.exists(Paths.get(path + "/" + nameFile))) {
+            nameFile = "copy_".concat(nameFile);
+        }
+        long countSize = 0;
+        try {
+            while (sizeFile != countSize) {
+                byte[] buffer = new byte[65536];
+                int bytesRead = in.read(buffer);
+                countSize += bytesRead;
+                System.out.println(countSize);
+                byte[] tmp = new byte[bytesRead];
+                System.arraycopy(buffer, 0, tmp, 0, tmp.length);
+                if (!Files.exists(Paths.get(path))) {
+                    Files.createFile(Paths.get(path));
+                }
+                Files.write(Paths.get(path), tmp, StandardOpenOption.APPEND);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return true;
     }
 
     @Override
