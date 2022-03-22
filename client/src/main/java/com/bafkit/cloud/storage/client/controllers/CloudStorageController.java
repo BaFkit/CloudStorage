@@ -52,6 +52,8 @@ public class CloudStorageController implements Initializable, WindowController {
     @FXML
     Button paste;
     @FXML
+    Button delete;
+    @FXML
     Button exit;
 
 
@@ -100,7 +102,6 @@ public class CloudStorageController implements Initializable, WindowController {
         listFilesOnServer = client.readCommand();
         refreshListView(list, listFilesOnServer, cloudFilesList);
     }
-
 
     public void selectItem(MouseEvent mouseEvent) {
         if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
@@ -159,26 +160,78 @@ public class CloudStorageController implements Initializable, WindowController {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-
         }
     }
 
-
-
-
     public void clickCopy(ActionEvent actionEvent) {
+        try {
+            if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
+                    && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
+                String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+                client.sendCommand("copy " + item);
+                String command = client.readCommand();
+                if (command.equals("success")) {
+                    System.out.println(item + " ожидает копирования"); //устновить флаг
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void clickCut(ActionEvent actionEvent) {
+        try {
+            if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
+                    && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
+                String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+                client.sendCommand("cut " + item);
+                String command = client.readCommand();
+                if (command.equals("success")) {
+                    System.out.println(item + " ожидает переноса"); //устновить флаг
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void clickPaste(ActionEvent actionEvent) {
+                                                        // сделать проверку на флаг
+        try {
+            client.sendCommand("paste");
+            String command = client.readCommand();
+            if (command.equals("success")) {
+                client.sendCommand("list");
+                listFilesOnServer = client.readCommand();
+                refreshListView(list, listFilesOnServer, cloudFilesList);
+            } else {
+                System.out.println("error");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-
-
-
+    public void clickDelete(ActionEvent actionEvent) {
+        try {
+            if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
+                    && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
+                String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+                client.sendCommand("delete " + item);
+                String command = client.readCommand();
+                if (command.equals("success")) {
+                    client.sendCommand("list");
+                    listFilesOnServer = client.readCommand();
+                    refreshListView(list, listFilesOnServer, cloudFilesList);
+                } else {
+                    System.out.println("error");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void clickExit(ActionEvent actionEvent) {
         try {
@@ -196,8 +249,9 @@ public class CloudStorageController implements Initializable, WindowController {
             try {
                 client.sendCommand("mkdir " + nameNewFolder);
                 String command = client.readCommand();
-                if (command.equals("success")){
+                if (command.equals("success")) {
                     client.sendCommand("list");
+                    nameFolderField.clear();
                     listFilesOnServer = client.readCommand();
                     refreshListView(list, listFilesOnServer, cloudFilesList);
                 } else {

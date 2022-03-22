@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<VBox alignment="CENTER" minHeight="150.0" minWidth="300.0" prefHeight="512.0" prefWidth="1024.0" spacing="20.0"  xmlns:fx="http://javafx.com/fxml" fx:controller="com.bafkit.cloud.storage.client.controllers.CloudStorageController">
+<VBox alignment="CENTER" minHeight="150.0" minWidth="300.0" prefHeight="512.0" prefWidth="1024.0" spacing="20.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bafkit.cloud.storage.client.controllers.CloudStorageController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
@@ -37,20 +37,6 @@
                         <Insets bottom="10.0" />
                      </VBox.margin>
                   </Button>
-                  <Button fx:id="copy" mnemonicParsing="false" onAction="#clickCopy" prefWidth="80.0" text="Copy">
-                     <VBox.margin>
-                        <Insets bottom="10.0" />
-                     </VBox.margin></Button>
-                  <Button fx:id="cut" mnemonicParsing="false" onAction="#clickCut" prefWidth="80.0" text="Cut">
-                     <VBox.margin>
-                        <Insets bottom="10.0" />
-                     </VBox.margin>
-                  </Button>
-                  <Button fx:id="paste" mnemonicParsing="false" onAction="#clickPaste" prefWidth="80.0" text="Paste">
-                     <VBox.margin>
-                        <Insets bottom="10.0" />
-                     </VBox.margin>
-                  </Button>
                     <Button fx:id="exit" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#clickExit" prefWidth="80.0" text="Exit" textAlignment="CENTER" />
                </children>
               </VBox>
@@ -61,7 +47,27 @@
             <TextField fx:id="nameFolderField" promptText="name folder" />
             <Button fx:id="newFolder" mnemonicParsing="false" onAction="#clickNewFolder" text="New folder">
                <HBox.margin>
-                  <Insets left="5.0" right="5.0" />
+                  <Insets left="5.0" right="30.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="copy" mnemonicParsing="false" onAction="#clickCopy" prefWidth="80.0" text="Copy">
+               <HBox.margin>
+                  <Insets right="5.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="cut" mnemonicParsing="false" onAction="#clickCut" prefWidth="80.0" text="Cut">
+               <HBox.margin>
+                  <Insets right="5.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="paste" mnemonicParsing="false" onAction="#clickPaste" prefWidth="80.0" text="Paste">
+               <HBox.margin>
+                  <Insets right="5.0" />
+               </HBox.margin>
+            </Button>
+            <Button fx:id="delete" mnemonicParsing="false" onAction="#clickDelete" prefWidth="80.0" text="Delete" textAlignment="CENTER">
+               <HBox.margin>
+                  <Insets left="30.0" />
                </HBox.margin>
             </Button>
          </children>

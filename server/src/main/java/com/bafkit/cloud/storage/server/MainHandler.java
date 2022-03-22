@@ -87,6 +87,18 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
                     case ("waitingGet"):
                         downloadFlag = true;
                         break;
+                    case ("copy"):
+                        msgSend = actionController.copy(parts[1]);
+                        break;
+                    case ("paste"):
+                        msgSend = actionController.paste();
+                        break;
+                    case ("cut"):
+                        msgSend = actionController.cut(parts[1]);
+                        break;
+                    case ("delete"):
+                        msgSend = actionController.delete(parts[1]);
+                        break;
                     default:
                         msgSend = "unknown";
                         System.out.println("unknown command");

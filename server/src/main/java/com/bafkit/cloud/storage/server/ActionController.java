@@ -1,9 +1,12 @@
 package com.bafkit.cloud.storage.server;
 
 import com.bafkit.cloud.storage.server.services.AuthorizationService;
+import com.bafkit.cloud.storage.server.services.CopyService;
+import com.bafkit.cloud.storage.server.services.DeleteService;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
@@ -17,7 +20,10 @@ public class ActionController {
     private long spaceClient;
     private File fileUpload;
     private File fileDownload;
-    private String nameFile;
+    private String nameUploadFile;
+    private String nameCopyFile;
+    private Path copyPathFile;
+    private boolean flagCut = false;
 
     private final AuthorizationService authorizationService;
     private FileOutputStream fos;
@@ -132,9 +138,9 @@ public class ActionController {
     public String upload(String[] parts) {
         fileUpload = new File(currentDir + File.separator + parts[1].replace("@", " "));
         if (fileUpload.exists()) {
-            nameFile = "copy_".concat(parts[1]);
+            nameUploadFile = "copy_".concat(parts[1]);
         } else {
-            nameFile = parts[1];
+            nameUploadFile = parts[1];
         }
         return "ready";
     }
@@ -147,15 +153,15 @@ public class ActionController {
     }
 
     public String uploadFile(byte[] bytes) {
-        nameFile = nameFile.replace("@", " ");
-        if (!Files.exists(Paths.get(currentDir + "/" + nameFile))) {
+        nameUploadFile = nameUploadFile.replace("@", " ");
+        if (!Files.exists(Paths.get(currentDir + "/" + nameUploadFile))) {
             try {
-                Files.createFile(Paths.get(currentDir + "/" + nameFile));
+                Files.createFile(Paths.get(currentDir + "/" + nameUploadFile));
             } catch (IOException e) {
                 e.printStackTrace();
             }        }
         try {
-            Files.write(Paths.get(currentDir + "/" + nameFile), bytes, StandardOpenOption.APPEND);
+            Files.write(Paths.get(currentDir + "/" + nameUploadFile), bytes, StandardOpenOption.APPEND);
         } catch (IOException e) {
             e.printStackTrace();
             return "unSuccess";
@@ -180,6 +186,46 @@ public class ActionController {
             e.printStackTrace();
         }
         return bytes;
+    }
+
+    public String copy(String part) {
+        copyPathFile = Paths.get(currentDir + "/" + part.replace("@", " "));
+        nameCopyFile = part;
+        return "success";
+    }
+
+    public String cut(String part) {
+        String command = copy(part);
+        if (command.equals("success")){
+            flagCut = true;
+        }
+        return command;
+    }
+
+    public String paste() {
+        Path destination = Paths.get(currentDir + "/" + nameCopyFile);
+        try {
+            Files.walkFileTree(copyPathFile, new CopyService(copyPathFile, destination));
+            if (flagCut) {
+                Files.walkFileTree(copyPathFile, new DeleteService());
+                flagCut = false;
+            }
+            return "success";
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "unSuccess";
+        }
+    }
+
+    public String delete(String part) {
+        Path deleteFile = Paths.get(currentDir + "/" + part.replace("@", " "));
+        try {
+            Files.walkFileTree(deleteFile, new DeleteService());
+            return "success";
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "unSuccess";
+        }
     }
 }
 
