@@ -7,6 +7,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -40,6 +41,8 @@ public class CloudStorageController implements Initializable, WindowController {
     @FXML
     TextField nameFolderField;
     @FXML
+    TextField searchField;
+    @FXML
     Button newFolder;
     @FXML
     Button download;
@@ -53,6 +56,8 @@ public class CloudStorageController implements Initializable, WindowController {
     Button paste;
     @FXML
     Button delete;
+    @FXML
+    Button back;
     @FXML
     Button exit;
 
@@ -82,6 +87,7 @@ public class CloudStorageController implements Initializable, WindowController {
             list.addAll(files);
         }
         cloudFilesList.getItems().addAll(list);
+        cloudFilesList.getItems().sort(String::compareTo);
         refreshPathField();
     }
 
@@ -107,7 +113,7 @@ public class CloudStorageController implements Initializable, WindowController {
         if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
             String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
             try {
-                cd(item);
+                cd(item.replace("[dir]@", "").replace("[file]@", ""));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -118,6 +124,11 @@ public class CloudStorageController implements Initializable, WindowController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select file");
         File uploadFile = fileChooser.showOpenDialog(exit.getScene().getWindow());
+        if (uploadFile.getName().contains("@")) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "The file name must not contain a symbol \"@\"");
+            alert.showAndWait();
+            return;
+        }
         try {
             client.sendCommand("upload " + uploadFile.getName().replace(" ", "@"));
             String command = client.readCommand();
@@ -127,7 +138,6 @@ public class CloudStorageController implements Initializable, WindowController {
                 if (command.equals("waitingGet")) {
                     client.sendFile(uploadFile.getAbsolutePath());
                 }
-
                 command = client.readCommand();                   //***
                 System.out.println(command + "  загрузка файла");
 
@@ -147,9 +157,8 @@ public class CloudStorageController implements Initializable, WindowController {
             fileChooser.setTitle("Select file");
             String nameFile = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
             File directory = fileChooser.showSaveDialog(exit.getScene().getWindow());
-            System.out.println(directory);
             try {
-                client.sendCommand("download " + nameFile);
+                client.sendCommand("download " + nameFile.replace("[dir]@", "").replace("[file]@", ""));
                 String command = client.readCommand();
                 if (command.split(" ")[0].equals("success")) {
                     long sizeFile = Long.parseLong(command.split(" ")[1]);
@@ -168,10 +177,10 @@ public class CloudStorageController implements Initializable, WindowController {
             if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
                     && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
                 String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
-                client.sendCommand("copy " + item);
+                client.sendCommand("copy " + item.replace("[dir]@", "").replace("[file]@", ""));
                 String command = client.readCommand();
                 if (command.equals("success")) {
-                    System.out.println(item + " ожидает копирования"); //устновить флаг
+                    paste.setStyle("-fx-text-fill: green");
                 }
             }
         } catch (IOException e) {
@@ -184,10 +193,10 @@ public class CloudStorageController implements Initializable, WindowController {
             if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
                     && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
                 String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
-                client.sendCommand("cut " + item);
+                client.sendCommand("cut " + item.replace("[dir]@", "").replace("[file]@", ""));
                 String command = client.readCommand();
                 if (command.equals("success")) {
-                    System.out.println(item + " ожидает переноса"); //устновить флаг
+                    paste.setStyle("-fx-text-fill: green");
                 }
             }
         } catch (IOException e) {
@@ -197,11 +206,12 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void clickPaste(ActionEvent actionEvent) {
-                                                        // сделать проверку на флаг
+
         try {
             client.sendCommand("paste");
             String command = client.readCommand();
             if (command.equals("success")) {
+                paste.setStyle("-fx-text-fill: black");
                 client.sendCommand("list");
                 listFilesOnServer = client.readCommand();
                 refreshListView(list, listFilesOnServer, cloudFilesList);
@@ -218,7 +228,7 @@ public class CloudStorageController implements Initializable, WindowController {
             if (!cloudFilesList.getSelectionModel().getSelectedItem().isEmpty()
                     && !cloudFilesList.getSelectionModel().getSelectedItem().equals("...")) {
                 String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
-                client.sendCommand("delete " + item);
+                client.sendCommand("delete " + item.replace("[dir]@", "").replace("[file]@", ""));
                 String command = client.readCommand();
                 if (command.equals("success")) {
                     client.sendCommand("list");
@@ -233,18 +243,13 @@ public class CloudStorageController implements Initializable, WindowController {
         }
     }
 
-    public void clickExit(ActionEvent actionEvent) {
-        try {
-            client.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Client.resetClient();
-        changeWindow(exit.getScene(), "authentication");
-    }
-
     public void clickNewFolder(ActionEvent actionEvent) {
         if (!nameFolderField.getText().isEmpty()) {
+            if (nameFolderField.getText().contains("@")) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "The directory name must not contain the symbol \"@\"");
+                alert.showAndWait();
+                return;
+            }
             String nameNewFolder = nameFolderField.getText().replace(" ", "@");
             try {
                 client.sendCommand("mkdir " + nameNewFolder);
@@ -261,5 +266,21 @@ public class CloudStorageController implements Initializable, WindowController {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void clickSearch(ActionEvent actionEvent) {
+    }
+
+    public void clickBack(ActionEvent actionEvent) {
+    }
+
+    public void clickExit(ActionEvent actionEvent) {
+        try {
+            client.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Client.resetClient();
+        changeWindow(exit.getScene(), "authentication");
     }
 }

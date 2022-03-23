@@ -96,6 +96,11 @@ public class ActionController {
         StringBuilder sb = new StringBuilder();
         assert files != null;
         for (File f : files) {
+            if (f.isDirectory()){
+                sb.append("[dir]@");
+            } else {
+              sb.append("[file]@");
+            }
             sb.append(f.getName().replace(" ", "@")).append(" ");
         }
         if (sb.length() < 1) sb.append("Empty");

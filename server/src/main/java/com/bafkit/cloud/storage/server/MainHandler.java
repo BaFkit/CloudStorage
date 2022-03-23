@@ -1,6 +1,7 @@
 package com.bafkit.cloud.storage.server;
 
 import com.bafkit.cloud.storage.server.services.AuthorizationService;
+import com.bafkit.cloud.storage.server.services.CommandsService;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -20,22 +21,32 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private final String root;
 
     private final ActionController actionController;
+    private CommandsService commands;
     private boolean uploadFlag = false;
     private boolean downloadFlag = false;
     private String msgSend;
-
     private long uploadFileSize;
     private long countBuffer;
-
     public MainHandler(AuthorizationService authorizationService, String root) {
         actionController = new ActionController(authorizationService, root);
         this.root = root;
+    }
+
+    public void setUploadFlag(boolean uploadFlag) {
+        this.uploadFlag = uploadFlag;
+    }
+    public void setDownloadFlag(boolean downloadFlag) {
+        this.downloadFlag = downloadFlag;
+    }
+    public void setUploadFileSize(long uploadFileSize) {
+        this.uploadFileSize = uploadFileSize;
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         System.out.println("Client connected: " + ctx.channel().remoteAddress());
         channels.add(ctx.channel());
+        commands = new CommandsService(actionController, this);
     }
 
 
@@ -45,65 +56,16 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
         ByteBuf byteBuf = ((ByteBuf) msg).copy();
         try {
             if (!uploadFlag) {
-                byte[] bytes = new byte[byteBuf.capacity()];
-                for (int i = 0; i < byteBuf.capacity(); i++) {
-                    bytes[i] = byteBuf.getByte(i);
+                StringBuilder sb = new StringBuilder();
+                while (byteBuf.isReadable()) {
+                    sb.append((char) byteBuf.readByte());
                 }
-                String str = new String(bytes, 0, bytes.length, StandardCharsets.UTF_8);
+                String str = sb.toString();
                 String[] parts = str.trim().split("\\s+");
                 String cmd = parts[0];
                 System.out.println(Arrays.toString(parts));
 
-                switch (cmd) {
-                    case ("auth"):
-                        msgSend = actionController.authorization(parts);
-                        break;
-                    case ("reg"):
-                        msgSend = actionController.registration(parts);
-                        break;
-                    case ("list"):
-                        msgSend = actionController.list();
-                        break;
-                    case ("currentDir"):
-                        msgSend = actionController.getCurrentDir();
-                        break;
-                    case ("cd"):
-                        msgSend = actionController.cd(parts);
-                        break;
-                    case ("mkdir"):
-                        msgSend = actionController.mkdir(parts);
-                        break;
-                    case ("upload"):
-                        msgSend = actionController.upload(parts);
-                        break;
-                    case ("waitingSend"):
-                        uploadFlag = true;
-                        uploadFileSize = Long.parseLong(parts[1]);
-                        msgSend = actionController.checkCapacity(parts[1]);
-                        break;
-                    case ("download"):
-                        msgSend = actionController.download(parts);
-                        break;
-                    case ("waitingGet"):
-                        downloadFlag = true;
-                        break;
-                    case ("copy"):
-                        msgSend = actionController.copy(parts[1]);
-                        break;
-                    case ("paste"):
-                        msgSend = actionController.paste();
-                        break;
-                    case ("cut"):
-                        msgSend = actionController.cut(parts[1]);
-                        break;
-                    case ("delete"):
-                        msgSend = actionController.delete(parts[1]);
-                        break;
-                    default:
-                        msgSend = "unknown";
-                        System.out.println("unknown command");
-                        break;
-                }
+                msgSend = commands.executeCommand(cmd, parts);
 
                 if (downloadFlag) {
                     byte[] bytesDownload = actionController.getBytes();
@@ -135,7 +97,6 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             byteBuf.release();
         }
     }
-
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
