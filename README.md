@@ -18,10 +18,11 @@
  ## The project consists of two modules:
 
  ### Client
-JDK 1.8, JavaFX, Java IO, NIO;
+*JDK 1.8, JavaFX, Java IO, NIO;*
  ### Server
-JDK 11, io.netty; 
-Data base: SQlite3
+*JDK 11, io.netty;* 
+
+*Data base: SQlite3*
 ____
 To start, you need the SD directory and the user_cloud.db database file in the root of the project.
  ###### Database creation: 
