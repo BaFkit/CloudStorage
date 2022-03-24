@@ -61,7 +61,6 @@ public class CloudStorageController implements Initializable, WindowController {
     @FXML
     Button exit;
 
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         try {
@@ -269,9 +268,15 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void clickSearch(ActionEvent actionEvent) {
+        openWindowSearch("search");
     }
 
     public void clickBack(ActionEvent actionEvent) {
+        try {
+            cd("...");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void clickExit(ActionEvent actionEvent) {
