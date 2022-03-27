@@ -3,6 +3,7 @@ package com.bafkit.cloud.storage.server;
 import com.bafkit.cloud.storage.server.services.AuthorizationService;
 import com.bafkit.cloud.storage.server.services.CopyService;
 import com.bafkit.cloud.storage.server.services.DeleteService;
+import com.bafkit.cloud.storage.server.services.SearchService;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -23,6 +24,7 @@ public class ActionController {
     private String nameUploadFile;
     private String nameCopyFile;
     private Path copyPathFile;
+    private StringBuilder findFiles;
     private boolean flagCut = false;
 
     private final AuthorizationService authorizationService;
@@ -96,6 +98,11 @@ public class ActionController {
         StringBuilder sb = new StringBuilder();
         assert files != null;
         for (File f : files) {
+            if (f.isDirectory()){
+                sb.append("[dir]@");
+            } else {
+              sb.append("[file]@");
+            }
             sb.append(f.getName().replace(" ", "@")).append(" ");
         }
         if (sb.length() < 1) sb.append("Empty");
@@ -118,15 +125,15 @@ public class ActionController {
         return dir;
     }
 
-    public String cd(String[] parts) {
-        if (parts[1].equals("...")) {
+    public String cd(String part) {
+        if (part.equals("...")) {
             currentDir = pathUp;
             pathUp = getPathUp(currentDir);
             return "success";
         } else {
-            File cd = new File(currentDir + File.separator + parts[1].replace("@", " "));
+            File cd = new File(currentDir + File.separator + part.replace("@", " "));
             if (cd.exists() && cd.isDirectory()) {
-                currentDir = currentDir + "/" + parts[1].replace("@", " ");
+                currentDir = currentDir + "/" + part.replace("@", " ");
                 pathUp = getPathUp(currentDir);
                 return "success";
             } else {
@@ -226,6 +233,33 @@ public class ActionController {
             e.printStackTrace();
             return "unSuccess";
         }
+    }
+
+    public String search(String part) {
+        part = part.replace("@", " ");
+        Path searchPath = Paths.get(rootClient);
+        findFiles = new StringBuilder();
+        try {
+            Files.walkFileTree(searchPath, new SearchService(part, this));
+            return findFiles.toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "unSuccess";
+        }
+    }
+
+    public void sendSearchFile(String findFile) {
+        this.findFiles.append(findFile.replace(" ", "@")).append(" ");
+    }
+
+    public String goToFile(String part) {
+        Path selectedFile = Paths.get(part);
+        if (!Files.isDirectory(selectedFile)) {
+            selectedFile = selectedFile.getParent();
+            System.out.println(selectedFile.toString());
+        }
+        currentDir = selectedFile.toString().replace("@", " ");
+        return list();
     }
 }
 
