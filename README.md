@@ -12,7 +12,7 @@
  * Remove
  * There is a standard sort and definition of folder or file
  * Users have their own limited file space
- * Search >> being completed
+ * Search
  * File info >> being completed
 
  ## The project consists of two modules:
