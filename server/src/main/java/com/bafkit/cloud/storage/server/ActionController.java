@@ -98,10 +98,10 @@ public class ActionController {
         StringBuilder sb = new StringBuilder();
         assert files != null;
         for (File f : files) {
-            if (f.isDirectory()){
+            if (f.isDirectory()) {
                 sb.append("[dir]@");
             } else {
-              sb.append("[file]@");
+                sb.append("[file]@");
             }
             sb.append(f.getName().replace(" ", "@")).append(" ");
         }
@@ -166,7 +166,8 @@ public class ActionController {
                 Files.createFile(Paths.get(currentDir + "/" + nameUploadFile));
             } catch (IOException e) {
                 e.printStackTrace();
-            }        }
+            }
+        }
         try {
             Files.write(Paths.get(currentDir + "/" + nameUploadFile), bytes, StandardOpenOption.APPEND);
         } catch (IOException e) {
@@ -203,7 +204,7 @@ public class ActionController {
 
     public String cut(String part) {
         String command = copy(part);
-        if (command.equals("success")){
+        if (command.equals("success")) {
             flagCut = true;
         }
         return command;
@@ -260,6 +261,25 @@ public class ActionController {
         }
         currentDir = selectedFile.toString().replace("@", " ");
         return list();
+    }
+
+    public String getFileInfo(String part) {
+        Path selectedFile = Paths.get(currentDir + "/" + part.replace("@", " "));
+        StringBuilder sb = new StringBuilder();
+        try {
+            if (!Files.isDirectory(selectedFile)) {
+                sb.append(part.replace(" ", "@")).append(" ");
+                sb.append(Files.getAttribute(selectedFile, "size")).append(" ");
+                sb.append(Files.getAttribute(selectedFile, "lastModifiedTime")).append(" ");
+            } else {
+                sb.append(part.replace(" ", "@")).append(" ");
+                sb.append("dir").append(" ");
+                sb.append(Files.getAttribute(selectedFile, "lastModifiedTime")).append(" ");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return sb.toString();
     }
 }
 

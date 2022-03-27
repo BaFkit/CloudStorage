@@ -108,10 +108,26 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void selectItem(MouseEvent mouseEvent) {
+        String item;
         if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
-            String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+            item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
             try {
                 cd(item.replace("[dir]@", "").replace("[file]@", ""));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (mouseEvent.getClickCount() == 1 && !cloudFilesList.getSelectionModel().isEmpty()) {
+            fileInfoTextArea.clear();
+            item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+            try {
+                client.sendCommand("fileInfo " + item.replace("[dir]@", "").replace("[file]@", ""));
+                String[] fileInfo = client.readCommand().trim().split(" ");
+                if (fileInfo[0].equals("...")) return;
+                fileInfoTextArea.appendText("Name:\n" + fileInfo[0].replace("@", " ") + "\n");
+                if (fileInfo[1].equals("dir")) fileInfoTextArea.appendText("\nType:\n" + "Directory" + "\n");
+                else fileInfoTextArea.appendText("\nSize:\n" + fileInfo[1] + " bytes\n");
+                fileInfoTextArea.appendText("\nLast Modified Time:\n" + fileInfo[2] + "\n");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -267,8 +283,9 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void clickSearch(ActionEvent actionEvent) {
-            openWindowSearch("search");
+        openWindowSearch("search");
     }
+
     public void goToLocationOfFoundFile(String listFileLocation) {
         refreshListView(list, listFileLocation, cloudFilesList);
     }

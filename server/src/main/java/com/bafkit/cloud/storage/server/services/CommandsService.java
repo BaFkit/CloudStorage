@@ -51,6 +51,8 @@ public class CommandsService {
                 return msgSend = actionController.search(parts[1]);
             case ("goToFile"):
                 return msgSend = actionController.goToFile(parts[1]);
+            case ("fileInfo"):
+                return msgSend = actionController.getFileInfo(parts[1]);
             default:
                 return msgSend = "unknown";
         }
