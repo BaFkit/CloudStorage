@@ -7,10 +7,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 
@@ -23,21 +20,23 @@ import java.util.ResourceBundle;
 
 public class CloudStorageController implements Initializable, WindowController {
 
+    private static CloudStorageController cloudStorageController;
     private final Client client;
     private final ObservableList<String> list;
-
-
     private String listFilesOnServer;
 
     public CloudStorageController() {
         client = Client.getClient();
         list = FXCollections.observableArrayList();
+        cloudStorageController = this;
     }
 
     @FXML
     TextField pathField;
     @FXML
     ListView<String> cloudFilesList;
+    @FXML
+    TextArea fileInfoTextArea;
     @FXML
     TextField nameFolderField;
     @FXML
@@ -268,7 +267,10 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void clickSearch(ActionEvent actionEvent) {
-        openWindowSearch("search");
+            openWindowSearch("search");
+    }
+    public void goToLocationOfFoundFile(String listFileLocation) {
+        refreshListView(list, listFileLocation, cloudFilesList);
     }
 
     public void clickBack(ActionEvent actionEvent) {
@@ -287,5 +289,9 @@ public class CloudStorageController implements Initializable, WindowController {
         }
         Client.resetClient();
         changeWindow(exit.getScene(), "authentication");
+    }
+
+    public static CloudStorageController getCloudStorageController() {
+        return cloudStorageController;
     }
 }

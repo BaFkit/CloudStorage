@@ -25,7 +25,7 @@ public class CommandsService {
             case ("currentDir"):
                 return msgSend = actionController.getCurrentDir();
             case ("cd"):
-                return msgSend = actionController.cd(parts);
+                return msgSend = actionController.cd(parts[1]);
             case ("mkdir"):
                 return msgSend = actionController.mkdir(parts);
             case ("upload"):
@@ -47,6 +47,10 @@ public class CommandsService {
                 return msgSend = actionController.cut(parts[1]);
             case ("delete"):
                 return msgSend = actionController.delete(parts[1]);
+            case ("search"):
+                return msgSend = actionController.search(parts[1]);
+            case ("goToFile"):
+                return msgSend = actionController.goToFile(parts[1]);
             default:
                 return msgSend = "unknown";
         }
