@@ -10,13 +10,11 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.ResourceBundle;
-
 
 public class CloudStorageController implements Initializable, WindowController {
 
@@ -126,7 +124,7 @@ public class CloudStorageController implements Initializable, WindowController {
                 if (fileInfo[0].equals("...")) return;
                 fileInfoTextArea.appendText("Name:\n" + fileInfo[0].replace("@", " ") + "\n");
                 if (fileInfo[1].equals("dir")) fileInfoTextArea.appendText("\nType:\n" + "Directory" + "\n");
-                else fileInfoTextArea.appendText("\nSize:\n" + fileInfo[1] + " bytes\n");
+                else fileInfoTextArea.appendText("\nType: File\nSize: " + fileInfo[1] + " bytes\n");
                 fileInfoTextArea.appendText("\nLast Modified Time:\n" + fileInfo[2] + "\n");
             } catch (IOException e) {
                 e.printStackTrace();

@@ -31,9 +31,10 @@ public class CommandsService {
             case ("upload"):
                 return msgSend = actionController.upload(parts);
             case ("waitingSend"):
-                mainHandler.setUploadFlag(true);
                 mainHandler.setUploadFileSize(Long.parseLong(parts[1]));
-                return msgSend = actionController.checkCapacity(parts[1]);
+                msgSend = actionController.checkCapacity(parts[1]);
+                if (msgSend.equals("waitingGet")) mainHandler.setUploadFlag(true);
+                return msgSend;
             case ("download"):
                 return msgSend = actionController.download(parts);
             case ("waitingGet"):

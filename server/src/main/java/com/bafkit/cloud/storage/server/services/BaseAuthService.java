@@ -108,7 +108,6 @@ public class BaseAuthService implements AuthorizationService {
         return "notExist";
     }
 
-
     @Override
     public void start() {
         connect();

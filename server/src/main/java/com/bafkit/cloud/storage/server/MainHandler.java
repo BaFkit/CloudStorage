@@ -27,6 +27,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private String msgSend;
     private long uploadFileSize;
     private long countBuffer;
+
     public MainHandler(AuthorizationService authorizationService, String root) {
         actionController = new ActionController(authorizationService, root);
         this.root = root;
@@ -35,9 +36,11 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     public void setUploadFlag(boolean uploadFlag) {
         this.uploadFlag = uploadFlag;
     }
+
     public void setDownloadFlag(boolean downloadFlag) {
         this.downloadFlag = downloadFlag;
     }
+
     public void setUploadFileSize(long uploadFileSize) {
         this.uploadFileSize = uploadFileSize;
     }
@@ -93,7 +96,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             countBuffer = 0L;
             msg = Unpooled.copiedBuffer(msgSend.getBytes(StandardCharsets.UTF_8));
             ctx.writeAndFlush(msg);
-        }finally {
+        } finally {
             byteBuf.release();
         }
     }
