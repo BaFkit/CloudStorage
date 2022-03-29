@@ -1,4 +1,4 @@
-**Now in work:** *finalizing the upload of files to the server, adding control of available memory for clients.*
+**Now in work:** *alteration the upload of files to the server, adding control of available memory for clients.*
 ____
 
 # CloudStorage
