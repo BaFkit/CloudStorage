@@ -30,7 +30,7 @@ ____
 To start, you need the SD directory and the user_cloud.db database file in the root of the project.
  ###### Database creation: 
 ```
-CREATE TABLE users_cloud.db (
+CREATE TABLE users (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 login TEXT NOT NULL UNIQUE,
 pass INTEGER NOT NULL,
