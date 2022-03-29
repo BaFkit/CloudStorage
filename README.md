@@ -1,3 +1,6 @@
+**Now in work:** *finalizing the upload of files to the server, adding control of available memory for clients.*
+____
+
 # CloudStorage
 <h2>Functions:</h2>
 
@@ -32,5 +35,5 @@ id INTEGER PRIMARY KEY AUTOINCREMENT,
 login TEXT NOT NULL UNIQUE,
 pass INTEGER NOT NULL,
 root TEXT NOT NULL UNIQUE,
-spaces INTEGER NOT NULL);
+spaces TEXT NOT NULL);
 ```
