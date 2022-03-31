@@ -4,8 +4,10 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 
 public class Client implements Closeable {
 
@@ -56,14 +58,53 @@ public class Client implements Closeable {
         return new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
     }
 
-    public void sendFile(String path) {
+
+    public int sendFile(Path path) {
+        byte[] buffer = new byte[1024 * 1024 * 10];
+        int numbPart = 0;
         try {
-            byte[] bytes = Files.readAllBytes(Paths.get(path));
-            out.write(bytes);
+            long fileSize = Files.size(path);
+            int partsCount = (int) (fileSize / buffer.length);
+            if (fileSize % buffer.length != 0) {
+                partsCount++;
+            }
+            sendCommand("countParts " + partsCount);
+            String command = readCommand();
+            System.out.println(command);
+            System.out.println("На клиенте частей - " + partsCount);
+            InputStream fileInputStream = Files.newInputStream(path);
+            for (int i = 0; i < partsCount; i++) {
+                int readBytes = fileInputStream.read(buffer);
+                System.out.println("Байтов считано" + readBytes);
+                numbPart++;
+                if (readBytes < buffer.length) {
+                    buffer = Arrays.copyOfRange(buffer, 0, readBytes);
+                }
+                out.write(buffer);
+                System.out.println("Отправлена часть - " + numbPart);
+                command = readCommand();
+                System.out.println(command);
+            }
+            fileInputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return numbPart;
     }
+
+
+
+
+
+//    public void sendFile(String path) {
+//        try {
+//            byte[] bytes = Files.readAllBytes(Paths.get(path));
+//            out.write(bytes);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
 
     public boolean getFile(String path, String nameFile, long sizeFile){
         if (Files.exists(Paths.get(path + "/" + nameFile))) {

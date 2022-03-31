@@ -6,10 +6,8 @@ import com.bafkit.cloud.storage.server.services.DeleteService;
 import com.bafkit.cloud.storage.server.services.SearchService;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
+import java.util.Arrays;
 
 public class ActionController {
 
@@ -17,18 +15,23 @@ public class ActionController {
     private String rootClient;
     private String currentDir;
     private String pathUp;
-
     private long spaceClient;
-    private File fileUpload;
-    private File fileDownload;
+    private Path uploadFile;
     private String nameUploadFile;
+
+    private File fileDownload;
+
     private String nameCopyFile;
     private Path copyPathFile;
     private StringBuilder findFiles;
     private boolean flagCut = false;
+    private boolean flagAppend = false;
+    private int partsCountClient;
+    private int partsCountServer;
+    private OutputStream fos;
 
     private final AuthorizationService authorizationService;
-    private FileOutputStream fos;
+
 
     public ActionController(AuthorizationService authorizationService, String root) {
         this.authorizationService = authorizationService;
@@ -140,39 +143,76 @@ public class ActionController {
     }
 
     public String upload(String[] parts) {
-        fileUpload = new File(currentDir + File.separator + parts[1].replace("@", " "));
-        if (fileUpload.exists()) {
-            nameUploadFile = "copy_".concat(parts[1]);
-        } else {
-            nameUploadFile = parts[1];
+        System.out.println(Arrays.toString(parts));
+        nameUploadFile = parts[1].replace("@", " ");
+        System.out.println(nameUploadFile);
+        if (Files.exists(Paths.get(currentDir + File.separator + nameUploadFile))) {
+            nameUploadFile = "copy_".concat(nameUploadFile);
+        }
+        uploadFile = Paths.get(currentDir + File.separator + nameUploadFile);
+        System.out.println(uploadFile.toString());
+        if (!checkCapacity(parts[2])) {
+            return "exceeded";
         }
         return "ready";
     }
 
-    public String checkCapacity(String size) {
-        if (spaceClient >= Long.parseLong(size)) {
-            return "waitingGet";
-        }
-        return "exceeded";
+    public boolean checkCapacity(String size) {
+        return spaceClient >= Long.parseLong(size);
+    }
+
+    public void setCountParts(String part) {
+        partsCountClient = Integer.parseInt(part);
     }
 
     public String uploadFile(byte[] bytes) {
-        nameUploadFile = nameUploadFile.replace("@", " ");
-        if (!Files.exists(Paths.get(currentDir + "/" + nameUploadFile))) {
-            try {
-                Files.createFile(Paths.get(currentDir + "/" + nameUploadFile));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
         try {
-            Files.write(Paths.get(currentDir + "/" + nameUploadFile), bytes, StandardOpenOption.APPEND);
+            if (!flagAppend) {
+                Files.createFile(uploadFile);
+                fos = Files.newOutputStream(uploadFile, StandardOpenOption.APPEND);
+                flagAppend = true;
+            }
+            fos.write(bytes);
+            partsCountServer++;
+            if (partsCountClient == partsCountServer) {
+                flagAppend = false;
+                partsCountClient = 0;
+                partsCountServer = 0;
+                fos.close();
+                return "success";
+            }
         } catch (IOException e) {
             e.printStackTrace();
-            return "unSuccess";
         }
-        return "success";
+        return "next";
     }
+//    public String upload(String[] parts) {
+//        fileUpload = new File(currentDir + File.separator + parts[1].replace("@", " "));
+//        if (fileUpload.exists()) {
+//            nameUploadFile = "copy_".concat(parts[1]);
+//        } else {
+//            nameUploadFile = parts[1];
+//        }
+//        return "ready";
+//    }
+//    public String uploadFile(byte[] bytes) {
+//        nameUploadFile = nameUploadFile.replace("@", " ");
+//        if (!Files.exists(Paths.get(currentDir + "/" + nameUploadFile))) {
+//            try {
+//                Files.createFile(Paths.get(currentDir + "/" + nameUploadFile));
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        try {
+//            Files.write(Paths.get(currentDir + "/" + nameUploadFile), bytes, StandardOpenOption.APPEND);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return "unSuccess";
+//        }
+//        return "success";
+
+//    }
 
     public String download(String[] parts) {
         fileDownload = new File(currentDir + File.separator + parts[1].replace("@", " "));

@@ -13,6 +13,7 @@ import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.ResourceBundle;
 
@@ -142,17 +143,17 @@ public class CloudStorageController implements Initializable, WindowController {
             return;
         }
         try {
-            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@"));
+            System.out.println("upload " + uploadFile.getName().replace(" ", "@")+" "+ uploadFile.length());
+            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@")+" "+ uploadFile.length());
             String command = client.readCommand();
+            if (command.equals("exceeded")) {
+                System.out.println("Не хватает места");
+                return;
+            }
             if (command.equals("ready")) {
-                client.sendCommand("waitingSend " + uploadFile.length());
+                int numbParts = client.sendFile(Paths.get(uploadFile.getAbsolutePath()));
                 command = client.readCommand();
-                if (command.equals("waitingGet")) {
-                    client.sendFile(uploadFile.getAbsolutePath());
-                }
-                command = client.readCommand();                   //***
-                System.out.println(command + "  загрузка файла");
-
+                System.out.println(command);
                 client.sendCommand("list");
                 listFilesOnServer = client.readCommand();
                 refreshListView(list, listFilesOnServer, cloudFilesList);
