@@ -7,13 +7,8 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
-
-import java.io.DataInputStream;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-
 
 @Slf4j
 public class MainHandler extends ChannelInboundHandlerAdapter {
@@ -89,7 +84,7 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
             }
             countBuffer += buf.capacity();
             msgSend = actionController.uploadFile(bytes);
-            if (uploadFileSize != countBuffer) return;
+            if (uploadFileSize != countBuffer || msgSend.equals("unSuccess")) return;
             uploadFlag = false;
             uploadFileSize = 0L;
             countBuffer = 0L;

@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
@@ -16,6 +17,8 @@ public class Client implements Closeable {
     private InputStream in;
     private OutputStream out;
     private String login;
+    private byte[] bufferCommand;
+    private byte[] bufferFile;
 
     public Client() {
         try {
@@ -25,6 +28,8 @@ public class Client implements Closeable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        bufferCommand = new byte[256];
+        bufferFile = new byte[1024*1024*10];
     }
 
     public static Client getClient() {
@@ -51,14 +56,27 @@ public class Client implements Closeable {
     }
 
     public String readCommand() throws IOException {
-        byte[] buffer = new byte[256];
-        int bytesRead = in.read(buffer);
-        return new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+        int bytesRead = in.read(bufferCommand);
+        return new String(bufferCommand, 0, bytesRead, StandardCharsets.UTF_8);
     }
 
-    public void sendFile(String path) {
+    public int getNumberPartsOfFile(Path path) {
         try {
-            byte[] bytes = Files.readAllBytes(Paths.get(path));
+            long fileSize = Files.size(path);
+            int partsCount = (int) (fileSize / bufferFile.length);
+            if (fileSize % bufferFile.length != 0) {
+                partsCount++;
+            }
+            return partsCount;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    public void sendFile(Path path) {
+        try {
+            byte[] bytes = Files.readAllBytes(path);
             System.out.println(bytes.length);
             out.write(bytes);
         } catch (IOException e) {

@@ -7,7 +7,6 @@ import com.bafkit.cloud.storage.server.services.SearchService;
 
 import java.io.*;
 import java.nio.file.*;
-import java.util.Arrays;
 
 public class ActionController {
 
@@ -17,8 +16,8 @@ public class ActionController {
     private String pathUp;
     private long spaceClient;
     private String nameUploadFile;
+    private Path uploadFile;
 
-    private File fileUpload;
     private File fileDownload;
 
     private String nameCopyFile = " ";
@@ -144,37 +143,63 @@ public class ActionController {
 
 
     public String upload(String[] parts) {
-        fileUpload = new File(currentDir + File.separator + parts[1].replace("@", " "));
-        if (fileUpload.exists()) {
-            nameUploadFile = "copy_".concat(parts[1]);
-        } else {
-            nameUploadFile = parts[1];
+            nameUploadFile = parts[1].replace("@", " ");
+            System.out.println(nameUploadFile);
+            if (Files.exists(Paths.get(currentDir + File.separator + nameUploadFile))) {
+                nameUploadFile = "copy_".concat(nameUploadFile);
+            }
+            uploadFile = Paths.get(currentDir + File.separator + nameUploadFile);
+            System.out.println(uploadFile.toString());
+            if (!checkCapacity(parts[2])) {
+                return "exceeded";
+            }
+
+            partsCountClient = Integer.parseInt(parts[3]);
+            return "ready";
         }
-        return "ready";
+
+    public boolean checkCapacity(String size) {
+        return spaceClient > Long.parseLong(size);
     }
+
     public String uploadFile(byte[] bytes) {
-        nameUploadFile = nameUploadFile.replace("@", " ");
-        if (!Files.exists(Paths.get(currentDir + "/" + nameUploadFile))) {
+        if (!Files.exists(uploadFile)) {
             try {
-                Files.createFile(Paths.get(currentDir + "/" + nameUploadFile));
+                Files.createFile(uploadFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         try {
-            Files.write(Paths.get(currentDir + "/" + nameUploadFile), bytes, StandardOpenOption.APPEND);
+            Files.write(uploadFile, bytes, StandardOpenOption.APPEND);
         } catch (IOException e) {
             e.printStackTrace();
             return "unSuccess";
         }
         return "success";
     }
-    public String checkCapacity(String size) {
-        if (spaceClient > Long.parseLong(size)) {
-            return "waitingGet";
-        }
-        return "exceeded";
-    }
+//    public String uploadFile(byte[] bytes) {
+//        try {
+//            if (!flagAppend) {
+//                Files.createFile(uploadFile);
+//                fos = Files.newOutputStream(uploadFile, StandardOpenOption.APPEND);
+//                flagAppend = true;
+//            }
+//            fos.write(bytes);
+//            partsCountServer++;
+//            if (partsCountClient == partsCountServer) {
+//                flagAppend = false;
+//                partsCountClient = 0;
+//                partsCountServer = 0;
+//                fos.close();
+//                return "success";
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return "next";
+
+//    }
 
     public String download(String[] parts) {
         fileDownload = new File(currentDir + File.separator + parts[1].replace("@", " "));

@@ -14,6 +14,7 @@ import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.ResourceBundle;
 
@@ -142,18 +143,23 @@ public class CloudStorageController implements Initializable, WindowController {
             alert.showAndWait();
             return;
         }
+        int partsCount = client.getNumberPartsOfFile(Paths.get(uploadFile.getAbsolutePath()));
+        if (partsCount < 0) {
+            System.out.println("Ошибка подсчета частей файла");
+            return;
+        }
         try {
-            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@"));
+            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@") +" "+ uploadFile.length() +" "+ partsCount);
             String command = client.readCommand();
+            if (command.equals("exceeded")) {
+                System.out.println("Out of memory");
+                return;
+            }
             if (command.equals("ready")) {
-                client.sendCommand("waitingSend " + uploadFile.length());
-                command = client.readCommand();
-                if (command.equals("waitingGet")) {
-                    client.sendFile(uploadFile.getAbsolutePath());
-                }
-                command = client.readCommand();                   //***
-                System.out.println(command + "  загрузка файла");
+                client.sendFile(Paths.get(uploadFile.getAbsolutePath()));
 
+                command = client.readCommand();
+                System.out.println(command);
                 client.sendCommand("list");
                 listFilesOnServer = client.readCommand();
                 refreshListView(list, listFilesOnServer, cloudFilesList);
