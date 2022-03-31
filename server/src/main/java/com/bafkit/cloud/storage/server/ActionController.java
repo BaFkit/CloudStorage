@@ -16,12 +16,12 @@ public class ActionController {
     private String currentDir;
     private String pathUp;
     private long spaceClient;
-    private Path uploadFile;
     private String nameUploadFile;
 
+    private File fileUpload;
     private File fileDownload;
 
-    private String nameCopyFile;
+    private String nameCopyFile = " ";
     private Path copyPathFile;
     private StringBuilder findFiles;
     private boolean flagCut = false;
@@ -142,77 +142,39 @@ public class ActionController {
         }
     }
 
+
     public String upload(String[] parts) {
-        System.out.println(Arrays.toString(parts));
-        nameUploadFile = parts[1].replace("@", " ");
-        System.out.println(nameUploadFile);
-        if (Files.exists(Paths.get(currentDir + File.separator + nameUploadFile))) {
-            nameUploadFile = "copy_".concat(nameUploadFile);
-        }
-        uploadFile = Paths.get(currentDir + File.separator + nameUploadFile);
-        System.out.println(uploadFile.toString());
-        if (!checkCapacity(parts[2])) {
-            return "exceeded";
+        fileUpload = new File(currentDir + File.separator + parts[1].replace("@", " "));
+        if (fileUpload.exists()) {
+            nameUploadFile = "copy_".concat(parts[1]);
+        } else {
+            nameUploadFile = parts[1];
         }
         return "ready";
     }
-
-    public boolean checkCapacity(String size) {
-        return spaceClient >= Long.parseLong(size);
-    }
-
-    public void setCountParts(String part) {
-        partsCountClient = Integer.parseInt(part);
-    }
-
     public String uploadFile(byte[] bytes) {
+        nameUploadFile = nameUploadFile.replace("@", " ");
+        if (!Files.exists(Paths.get(currentDir + "/" + nameUploadFile))) {
+            try {
+                Files.createFile(Paths.get(currentDir + "/" + nameUploadFile));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         try {
-            if (!flagAppend) {
-                Files.createFile(uploadFile);
-                fos = Files.newOutputStream(uploadFile, StandardOpenOption.APPEND);
-                flagAppend = true;
-            }
-            fos.write(bytes);
-            partsCountServer++;
-            if (partsCountClient == partsCountServer) {
-                flagAppend = false;
-                partsCountClient = 0;
-                partsCountServer = 0;
-                fos.close();
-                return "success";
-            }
+            Files.write(Paths.get(currentDir + "/" + nameUploadFile), bytes, StandardOpenOption.APPEND);
         } catch (IOException e) {
             e.printStackTrace();
+            return "unSuccess";
         }
-        return "next";
+        return "success";
     }
-//    public String upload(String[] parts) {
-//        fileUpload = new File(currentDir + File.separator + parts[1].replace("@", " "));
-//        if (fileUpload.exists()) {
-//            nameUploadFile = "copy_".concat(parts[1]);
-//        } else {
-//            nameUploadFile = parts[1];
-//        }
-//        return "ready";
-//    }
-//    public String uploadFile(byte[] bytes) {
-//        nameUploadFile = nameUploadFile.replace("@", " ");
-//        if (!Files.exists(Paths.get(currentDir + "/" + nameUploadFile))) {
-//            try {
-//                Files.createFile(Paths.get(currentDir + "/" + nameUploadFile));
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        try {
-//            Files.write(Paths.get(currentDir + "/" + nameUploadFile), bytes, StandardOpenOption.APPEND);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return "unSuccess";
-//        }
-//        return "success";
-
-//    }
+    public String checkCapacity(String size) {
+        if (spaceClient > Long.parseLong(size)) {
+            return "waitingGet";
+        }
+        return "exceeded";
+    }
 
     public String download(String[] parts) {
         fileDownload = new File(currentDir + File.separator + parts[1].replace("@", " "));
@@ -248,18 +210,23 @@ public class ActionController {
     }
 
     public String paste() {
-        Path destination = Paths.get(currentDir + "/" + nameCopyFile);
-        try {
-            Files.walkFileTree(copyPathFile, new CopyService(copyPathFile, destination));
-            if (flagCut) {
-                Files.walkFileTree(copyPathFile, new DeleteService());
-                flagCut = false;
+        if (!nameCopyFile.equals(" ")){
+            Path destination = Paths.get(currentDir + "/" + nameCopyFile);
+            try {
+                Files.walkFileTree(copyPathFile, new CopyService(copyPathFile, destination));
+                if (flagCut) {
+                    Files.walkFileTree(copyPathFile, new DeleteService());
+                    flagCut = false;
+                }
+                nameCopyFile = " ";
+                copyPathFile = null;
+                return "success";
+            } catch (IOException e) {
+                e.printStackTrace();
+
             }
-            return "success";
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "unSuccess";
         }
+        return "unSuccess";
     }
 
     public String delete(String part) {

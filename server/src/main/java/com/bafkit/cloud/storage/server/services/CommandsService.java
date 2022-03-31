@@ -30,11 +30,10 @@ public class CommandsService {
                 return msgSend = actionController.mkdir(parts);
             case ("upload"):
                 return msgSend = actionController.upload(parts);
-            case ("countParts"):
-                actionController.setCountParts(parts[1]);
+            case ("waitingSend"):
                 mainHandler.setUploadFlag(true);
-                return "success";
-
+                mainHandler.setUploadFileSize(Long.parseLong(parts[1]));
+                return msgSend = actionController.checkCapacity(parts[1]);
             case ("download"):
                 return msgSend = actionController.download(parts);
             case ("waitingGet"):

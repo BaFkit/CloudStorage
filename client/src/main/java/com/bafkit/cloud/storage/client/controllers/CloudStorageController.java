@@ -10,10 +10,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.ResourceBundle;
 
@@ -143,17 +143,17 @@ public class CloudStorageController implements Initializable, WindowController {
             return;
         }
         try {
-            System.out.println("upload " + uploadFile.getName().replace(" ", "@")+" "+ uploadFile.length());
-            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@")+" "+ uploadFile.length());
+            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@"));
             String command = client.readCommand();
-            if (command.equals("exceeded")) {
-                System.out.println("Не хватает места");
-                return;
-            }
             if (command.equals("ready")) {
-                int numbParts = client.sendFile(Paths.get(uploadFile.getAbsolutePath()));
+                client.sendCommand("waitingSend " + uploadFile.length());
                 command = client.readCommand();
-                System.out.println(command);
+                if (command.equals("waitingGet")) {
+                    client.sendFile(uploadFile.getAbsolutePath());
+                }
+                command = client.readCommand();                   //***
+                System.out.println(command + "  загрузка файла");
+
                 client.sendCommand("list");
                 listFilesOnServer = client.readCommand();
                 refreshListView(list, listFilesOnServer, cloudFilesList);
@@ -219,7 +219,6 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void clickPaste(ActionEvent actionEvent) {
-
         try {
             client.sendCommand("paste");
             String command = client.readCommand();
