@@ -14,9 +14,9 @@ import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.ResourceBundle;
-
 
 public class CloudStorageController implements Initializable, WindowController {
 
@@ -108,10 +108,26 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void selectItem(MouseEvent mouseEvent) {
+        String item;
         if (mouseEvent.getClickCount() >= 2 && !cloudFilesList.getSelectionModel().isEmpty()) {
-            String item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+            item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
             try {
                 cd(item.replace("[dir]@", "").replace("[file]@", ""));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (mouseEvent.getClickCount() == 1 && !cloudFilesList.getSelectionModel().isEmpty()) {
+            fileInfoTextArea.clear();
+            item = cloudFilesList.getSelectionModel().getSelectedItem().replace(" ", "@");
+            try {
+                client.sendCommand("fileInfo " + item.replace("[dir]@", "").replace("[file]@", ""));
+                String[] fileInfo = client.readCommand().trim().split(" ");
+                if (fileInfo[0].equals("...")) return;
+                fileInfoTextArea.appendText("Name:\n" + fileInfo[0].replace("@", " ") + "\n");
+                if (fileInfo[1].equals("dir")) fileInfoTextArea.appendText("\nType:\n" + "Directory" + "\n");
+                else fileInfoTextArea.appendText("\nType: File\nSize: " + fileInfo[1] + " bytes\n");
+                fileInfoTextArea.appendText("\nLast Modified Time:\n" + fileInfo[2] + "\n");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -127,18 +143,23 @@ public class CloudStorageController implements Initializable, WindowController {
             alert.showAndWait();
             return;
         }
+        int partsCount = client.getNumberPartsOfFile(Paths.get(uploadFile.getAbsolutePath()));
+        if (partsCount < 0) {
+            System.out.println("Ошибка подсчета частей файла");
+            return;
+        }
         try {
-            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@"));
+            client.sendCommand("upload " + uploadFile.getName().replace(" ", "@") +" "+ uploadFile.length() +" "+ partsCount);
             String command = client.readCommand();
+            if (command.equals("exceeded")) {
+                System.out.println("Out of memory");
+                return;
+            }
             if (command.equals("ready")) {
-                client.sendCommand("waitingSend " + uploadFile.length());
-                command = client.readCommand();
-                if (command.equals("waitingGet")) {
-                    client.sendFile(uploadFile.getAbsolutePath());
-                }
-                command = client.readCommand();                   //***
-                System.out.println(command + "  загрузка файла");
+                client.sendFile(Paths.get(uploadFile.getAbsolutePath()));
 
+                command = client.readCommand();
+                System.out.println(command);
                 client.sendCommand("list");
                 listFilesOnServer = client.readCommand();
                 refreshListView(list, listFilesOnServer, cloudFilesList);
@@ -204,7 +225,6 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void clickPaste(ActionEvent actionEvent) {
-
         try {
             client.sendCommand("paste");
             String command = client.readCommand();
@@ -267,8 +287,9 @@ public class CloudStorageController implements Initializable, WindowController {
     }
 
     public void clickSearch(ActionEvent actionEvent) {
-            openWindowSearch("search");
+        openWindowSearch("search");
     }
+
     public void goToLocationOfFoundFile(String listFileLocation) {
         refreshListView(list, listFileLocation, cloudFilesList);
     }

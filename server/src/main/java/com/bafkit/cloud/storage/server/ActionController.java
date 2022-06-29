@@ -6,10 +6,7 @@ import com.bafkit.cloud.storage.server.services.DeleteService;
 import com.bafkit.cloud.storage.server.services.SearchService;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 
 public class ActionController {
 
@@ -17,18 +14,23 @@ public class ActionController {
     private String rootClient;
     private String currentDir;
     private String pathUp;
-
     private long spaceClient;
-    private File fileUpload;
-    private File fileDownload;
     private String nameUploadFile;
-    private String nameCopyFile;
+    private Path uploadFile;
+
+    private File fileDownload;
+
+    private String nameCopyFile = " ";
     private Path copyPathFile;
     private StringBuilder findFiles;
     private boolean flagCut = false;
+    private boolean flagAppend = false;
+    private int partsCountClient;
+    private int partsCountServer;
+    private OutputStream fos;
 
     private final AuthorizationService authorizationService;
-    private FileOutputStream fos;
+
 
     public ActionController(AuthorizationService authorizationService, String root) {
         this.authorizationService = authorizationService;
@@ -98,11 +100,8 @@ public class ActionController {
         StringBuilder sb = new StringBuilder();
         assert files != null;
         for (File f : files) {
-            if (f.isDirectory()){
-                sb.append("[dir]@");
-            } else {
-              sb.append("[file]@");
-            }
+            if (f.isDirectory()) sb.append("[dir]@");
+            else sb.append("[file]@");
             sb.append(f.getName().replace(" ", "@")).append(" ");
         }
         if (sb.length() < 1) sb.append("Empty");
@@ -142,39 +141,65 @@ public class ActionController {
         }
     }
 
-    public String upload(String[] parts) {
-        fileUpload = new File(currentDir + File.separator + parts[1].replace("@", " "));
-        if (fileUpload.exists()) {
-            nameUploadFile = "copy_".concat(parts[1]);
-        } else {
-            nameUploadFile = parts[1];
-        }
-        return "ready";
-    }
 
-    public String checkCapacity(String size) {
-        if (spaceClient > Long.parseLong(size)) {
-            return "waitingGet";
+    public String upload(String[] parts) {
+            nameUploadFile = parts[1].replace("@", " ");
+            System.out.println(nameUploadFile);
+            if (Files.exists(Paths.get(currentDir + File.separator + nameUploadFile))) {
+                nameUploadFile = "copy_".concat(nameUploadFile);
+            }
+            uploadFile = Paths.get(currentDir + File.separator + nameUploadFile);
+            System.out.println(uploadFile.toString());
+            if (!checkCapacity(parts[2])) {
+                return "exceeded";
+            }
+
+            partsCountClient = Integer.parseInt(parts[3]);
+            return "ready";
         }
-        return "exceeded";
+
+    public boolean checkCapacity(String size) {
+        return spaceClient > Long.parseLong(size);
     }
 
     public String uploadFile(byte[] bytes) {
-        nameUploadFile = nameUploadFile.replace("@", " ");
-        if (!Files.exists(Paths.get(currentDir + "/" + nameUploadFile))) {
+        if (!Files.exists(uploadFile)) {
             try {
-                Files.createFile(Paths.get(currentDir + "/" + nameUploadFile));
+                Files.createFile(uploadFile);
             } catch (IOException e) {
                 e.printStackTrace();
-            }        }
+            }
+        }
         try {
-            Files.write(Paths.get(currentDir + "/" + nameUploadFile), bytes, StandardOpenOption.APPEND);
+            Files.write(uploadFile, bytes, StandardOpenOption.APPEND);
         } catch (IOException e) {
             e.printStackTrace();
             return "unSuccess";
         }
         return "success";
     }
+//    public String uploadFile(byte[] bytes) {
+//        try {
+//            if (!flagAppend) {
+//                Files.createFile(uploadFile);
+//                fos = Files.newOutputStream(uploadFile, StandardOpenOption.APPEND);
+//                flagAppend = true;
+//            }
+//            fos.write(bytes);
+//            partsCountServer++;
+//            if (partsCountClient == partsCountServer) {
+//                flagAppend = false;
+//                partsCountClient = 0;
+//                partsCountServer = 0;
+//                fos.close();
+//                return "success";
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return "next";
+
+//    }
 
     public String download(String[] parts) {
         fileDownload = new File(currentDir + File.separator + parts[1].replace("@", " "));
@@ -203,25 +228,30 @@ public class ActionController {
 
     public String cut(String part) {
         String command = copy(part);
-        if (command.equals("success")){
+        if (command.equals("success")) {
             flagCut = true;
         }
         return command;
     }
 
     public String paste() {
-        Path destination = Paths.get(currentDir + "/" + nameCopyFile);
-        try {
-            Files.walkFileTree(copyPathFile, new CopyService(copyPathFile, destination));
-            if (flagCut) {
-                Files.walkFileTree(copyPathFile, new DeleteService());
-                flagCut = false;
+        if (!nameCopyFile.equals(" ")){
+            Path destination = Paths.get(currentDir + "/" + nameCopyFile);
+            try {
+                Files.walkFileTree(copyPathFile, new CopyService(copyPathFile, destination));
+                if (flagCut) {
+                    Files.walkFileTree(copyPathFile, new DeleteService());
+                    flagCut = false;
+                }
+                nameCopyFile = " ";
+                copyPathFile = null;
+                return "success";
+            } catch (IOException e) {
+                e.printStackTrace();
+
             }
-            return "success";
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "unSuccess";
         }
+        return "unSuccess";
     }
 
     public String delete(String part) {
@@ -260,6 +290,25 @@ public class ActionController {
         }
         currentDir = selectedFile.toString().replace("@", " ");
         return list();
+    }
+
+    public String getFileInfo(String part) {
+        Path selectedFile = Paths.get(currentDir + "/" + part.replace("@", " "));
+        StringBuilder sb = new StringBuilder();
+        try {
+            if (!Files.isDirectory(selectedFile)) {
+                sb.append(part.replace(" ", "@")).append(" ");
+                sb.append(Files.getAttribute(selectedFile, "size")).append(" ");
+                sb.append(Files.getAttribute(selectedFile, "lastModifiedTime")).append(" ");
+            } else {
+                sb.append(part.replace(" ", "@")).append(" ");
+                sb.append("dir").append(" ");
+                sb.append(Files.getAttribute(selectedFile, "lastModifiedTime")).append(" ");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return sb.toString();
     }
 }
 

@@ -1,7 +1,6 @@
 package com.bafkit.cloud.storage.client.controllers;
 
 import com.bafkit.cloud.storage.client.Client;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;

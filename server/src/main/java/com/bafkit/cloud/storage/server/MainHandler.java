@@ -4,22 +4,16 @@ import com.bafkit.cloud.storage.server.services.AuthorizationService;
 import com.bafkit.cloud.storage.server.services.CommandsService;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
-
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 @Slf4j
 public class MainHandler extends ChannelInboundHandlerAdapter {
 
-    private static final List<Channel> channels = new ArrayList<>();
     private final String root;
-
     private final ActionController actionController;
     private CommandsService commands;
     private boolean uploadFlag = false;
@@ -27,17 +21,22 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     private String msgSend;
     private long uploadFileSize;
     private long countBuffer;
+    private ByteBuf buf;
+
     public MainHandler(AuthorizationService authorizationService, String root) {
         actionController = new ActionController(authorizationService, root);
         this.root = root;
+        commands = new CommandsService(actionController, this);
     }
 
     public void setUploadFlag(boolean uploadFlag) {
         this.uploadFlag = uploadFlag;
     }
+
     public void setDownloadFlag(boolean downloadFlag) {
         this.downloadFlag = downloadFlag;
     }
+
     public void setUploadFileSize(long uploadFileSize) {
         this.uploadFileSize = uploadFileSize;
     }
@@ -45,20 +44,18 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         System.out.println("Client connected: " + ctx.channel().remoteAddress());
-        channels.add(ctx.channel());
-        commands = new CommandsService(actionController, this);
     }
 
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-
-        ByteBuf byteBuf = ((ByteBuf) msg).copy();
+        buf = ctx.alloc().buffer();
+        buf = ((ByteBuf) msg).copy();
         try {
             if (!uploadFlag) {
                 StringBuilder sb = new StringBuilder();
-                while (byteBuf.isReadable()) {
-                    sb.append((char) byteBuf.readByte());
+                while (buf.isReadable()) {
+                    sb.append((char) buf.readByte());
                 }
                 String str = sb.toString();
                 String[] parts = str.trim().split("\\s+");
@@ -69,32 +66,33 @@ public class MainHandler extends ChannelInboundHandlerAdapter {
 
                 if (downloadFlag) {
                     byte[] bytesDownload = actionController.getBytes();
-                    byteBuf = Unpooled.copiedBuffer(bytesDownload);
+                    buf = Unpooled.copiedBuffer(bytesDownload);
                     downloadFlag = false;
-                    ctx.writeAndFlush(byteBuf);
-                    byteBuf.clear();
+                    ctx.writeAndFlush(buf);
+                    buf.release();
                     return;
                 }
 
                 msg = Unpooled.copiedBuffer(msgSend.getBytes(StandardCharsets.UTF_8));
                 ctx.writeAndFlush(msg);
-                byteBuf.clear();
+                buf.release();
                 return;
             }
-            byte[] bytes = new byte[byteBuf.capacity()];
-            for (int i = 0; i < byteBuf.capacity(); i++) {
-                bytes[i] = byteBuf.getByte(i);
+            byte[] bytes = new byte[buf.capacity()];
+            for (int i = 0; i < buf.capacity(); i++) {
+                bytes[i] = buf.getByte(i);
             }
-            countBuffer += byteBuf.capacity();
+            countBuffer += buf.capacity();
             msgSend = actionController.uploadFile(bytes);
-            if (uploadFileSize != countBuffer) return;
+            if (uploadFileSize != countBuffer || msgSend.equals("unSuccess")) return;
             uploadFlag = false;
             uploadFileSize = 0L;
             countBuffer = 0L;
             msg = Unpooled.copiedBuffer(msgSend.getBytes(StandardCharsets.UTF_8));
             ctx.writeAndFlush(msg);
         }finally {
-            byteBuf.release();
+            buf.release();
+            buf = null;
         }
     }
 

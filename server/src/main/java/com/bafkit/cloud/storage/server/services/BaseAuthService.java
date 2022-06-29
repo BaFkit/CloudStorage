@@ -32,7 +32,7 @@ public class BaseAuthService implements AuthorizationService {
             ps = connection.prepareStatement("SELECT * FROM users");
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                entries.add(new Entry(rs.getString("login"), rs.getInt("pass"), rs.getString("root"), rs.getInt("space")));
+                entries.add(new Entry(rs.getString("login"), rs.getInt("pass"), rs.getString("root"), rs.getString("space")));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -58,7 +58,7 @@ public class BaseAuthService implements AuthorizationService {
         long space = -1;
         for (Entry a : entries) {
             if (a.login.equals(login) && a.pass == pass) {
-                space = a.space;
+                space = Long.parseLong(a.space);
                 return space;
             }
         }
@@ -71,14 +71,14 @@ public class BaseAuthService implements AuthorizationService {
             return "busy";
         }
         String folderClient = "folder_" + login;
-        int spaceClient = 1000000000;
+        String spaceClient = "1000000000";
         try {
             ps = connection.prepareStatement("INSERT INTO users ('login', 'pass', 'root', 'space') VALUES" +
                     "(?, ?, ?, ?)");
             ps.setString(1, login);
             ps.setInt(2, pass);
             ps.setString(3, folderClient);
-            ps.setInt(4, spaceClient);
+            ps.setString(4, spaceClient);
             ps.execute();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -108,7 +108,6 @@ public class BaseAuthService implements AuthorizationService {
         return "notExist";
     }
 
-
     @Override
     public void start() {
         connect();
@@ -124,10 +123,10 @@ public class BaseAuthService implements AuthorizationService {
         private final String login;
         private final int pass;
         private final String root;
-        private final int space;
+        private final String space;
 
 
-        public Entry(String login, int pass, String root, int space) {
+        public Entry(String login, int pass, String root, String space) {
             this.login = login;
             this.pass = pass;
             this.root = root;

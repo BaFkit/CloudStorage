@@ -29,11 +29,12 @@ public class CommandsService {
             case ("mkdir"):
                 return msgSend = actionController.mkdir(parts);
             case ("upload"):
-                return msgSend = actionController.upload(parts);
-            case ("waitingSend"):
-                mainHandler.setUploadFlag(true);
-                mainHandler.setUploadFileSize(Long.parseLong(parts[1]));
-                return msgSend = actionController.checkCapacity(parts[1]);
+                msgSend = actionController.upload(parts);
+                mainHandler.setUploadFileSize(Long.parseLong(parts[2]));
+                if (msgSend.equals("ready")) {
+                    mainHandler.setUploadFlag(true);
+                }
+                return msgSend;
             case ("download"):
                 return msgSend = actionController.download(parts);
             case ("waitingGet"):
@@ -51,6 +52,8 @@ public class CommandsService {
                 return msgSend = actionController.search(parts[1]);
             case ("goToFile"):
                 return msgSend = actionController.goToFile(parts[1]);
+            case ("fileInfo"):
+                return msgSend = actionController.getFileInfo(parts[1]);
             default:
                 return msgSend = "unknown";
         }
